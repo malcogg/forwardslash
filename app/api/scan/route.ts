@@ -29,7 +29,7 @@ async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ url, limit: 500 }),
+    body: JSON.stringify({ url, limit: 50 }), // Lower limit = fewer credits; increase when you upgrade plan
   });
 
   const startJson = (await start.json()) as { success?: boolean; id?: string; error?: string };
