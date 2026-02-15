@@ -20,7 +20,7 @@ function categorizeUrl(url: string): string {
   return "Other";
 }
 
-async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success: boolean; data?: { metadata?: { sourceURL?: string } }[] }> {
+async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success: boolean; data?: { metadata?: { sourceURL?: string } }[]; error?: string }> {
   const start = await fetch("https://api.firecrawl.dev/v2/crawl", {
     method: "POST",
     headers: {
@@ -30,12 +30,13 @@ async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success
     body: JSON.stringify({ url, limit: 500 }),
   });
 
-  const startJson = (await start.json()) as { success?: boolean; id?: string };
+  const startJson = (await start.json()) as { success?: boolean; id?: string; error?: string };
   if (!startJson.success || !startJson.id) {
-    return { success: false };
+    const msg = typeof startJson.error === "string" ? startJson.error : "Could not start scan";
+    return { success: false, error: msg };
   }
 
-  const maxWait = 120; // seconds
+  const maxWait = 180; // 3 minutes
   const pollInterval = 3;
   let elapsed = 0;
 
@@ -50,15 +51,17 @@ async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success
       success?: boolean;
       status?: string;
       data?: { metadata?: { sourceURL?: string } }[];
+      error?: string;
     };
 
-    if (!status.success || status.status === "failed") return { success: false };
+    if (!status.success) return { success: false, error: status.error ?? "Scan error" };
+    if (status.status === "failed") return { success: false, error: status.error ?? "Crawl failed" };
     if (status.status === "completed" && Array.isArray(status.data)) {
       return { success: true, data: status.data };
     }
   }
 
-  return { success: false };
+  return { success: false, error: "Scan timed out. Try a smaller site or try again." };
 }
 
 export async function POST(request: Request) {
@@ -81,10 +84,8 @@ export async function POST(request: Request) {
     const crawl = await runFirecrawlCrawl(apiKey, normalized);
 
     if (!crawl.success || !crawl.data) {
-      return NextResponse.json(
-        { error: "Scan failed. Please check the URL and try again." },
-        { status: 500 }
-      );
+      const msg = crawl.error ?? "Scan failed. Please check the URL and try again.";
+      return NextResponse.json({ error: msg }, { status: 500 });
     }
 
     const pages = crawl.data;
