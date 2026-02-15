@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import Firecrawl from "@mendable/firecrawl-js";
 
 const CATEGORY_PATTERNS: { label: string; patterns: RegExp[] }[] = [
   { label: "Products", patterns: [/\/product/i, /\/shop/i, /\/store/i, /\/p\//, /\/item/i, /\/catalog/i] },
@@ -10,11 +9,56 @@ const CATEGORY_PATTERNS: { label: string; patterns: RegExp[] }[] = [
 ];
 
 function categorizeUrl(url: string): string {
-  const path = new URL(url).pathname.toLowerCase();
-  for (const { label, patterns } of CATEGORY_PATTERNS) {
-    if (patterns.some((p) => p.test(path))) return label;
+  try {
+    const path = new URL(url).pathname.toLowerCase();
+    for (const { label, patterns } of CATEGORY_PATTERNS) {
+      if (patterns.some((p) => p.test(path))) return label;
+    }
+  } catch {
+    /* invalid URL */
   }
   return "Other";
+}
+
+async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success: boolean; data?: { metadata?: { sourceURL?: string } }[] }> {
+  const start = await fetch("https://api.firecrawl.dev/v2/crawl", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ url, limit: 500 }),
+  });
+
+  const startJson = (await start.json()) as { success?: boolean; id?: string };
+  if (!startJson.success || !startJson.id) {
+    return { success: false };
+  }
+
+  const maxWait = 120; // seconds
+  const pollInterval = 3;
+  let elapsed = 0;
+
+  while (elapsed < maxWait) {
+    await new Promise((r) => setTimeout(r, pollInterval * 1000));
+    elapsed += pollInterval;
+
+    const statusRes = await fetch(`https://api.firecrawl.dev/v2/crawl/${startJson.id}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    const status = (await statusRes.json()) as {
+      success?: boolean;
+      status?: string;
+      data?: { metadata?: { sourceURL?: string } }[];
+    };
+
+    if (!status.success || status.status === "failed") return { success: false };
+    if (status.status === "completed" && Array.isArray(status.data)) {
+      return { success: true, data: status.data };
+    }
+  }
+
+  return { success: false };
 }
 
 export async function POST(request: Request) {
@@ -34,12 +78,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const firecrawl = new Firecrawl({ apiKey });
-
-    const crawl = await firecrawl.crawl(normalized, {
-      limit: 500,
-      scrapeOptions: { formats: ["markdown"] },
-    });
+    const crawl = await runFirecrawlCrawl(apiKey, normalized);
 
     if (!crawl.success || !crawl.data) {
       return NextResponse.json(
@@ -60,9 +99,8 @@ export async function POST(request: Request) {
     categoryCounts.set("Other", 0);
 
     for (const page of pages) {
-      const source = (page as { metadata?: { sourceURL?: string } }).metadata?.sourceURL;
-      const u = source || "";
-      const cat = categorizeUrl(u);
+      const source = page.metadata?.sourceURL ?? "";
+      const cat = categorizeUrl(source);
       categoryCounts.set(cat, (categoryCounts.get(cat) ?? 0) + 1);
     }
 
