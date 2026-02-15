@@ -27,7 +27,9 @@ Last updated: February 2026
 - [ ] At least one test customer config + content (e.g. Frank Gay) for QA
 
 ### Backend & Data
-- [ ] Firecrawl API working (or crawl endpoint)
+- [ ] `FIRECRAWL_API_KEY` in Vercel (Settings → Environment Variables)
+- [ ] `FIRECRAWL_API_KEY` in `.env.local` for Cursor local dev (never commit)
+- [ ] Firecrawl API working (scan → page count + categories)
 - [ ] KV/DB for customer config and content
 - [ ] Admin route or manual process to add customers
 

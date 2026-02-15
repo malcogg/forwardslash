@@ -14,6 +14,15 @@ This is your step-by-step guide for fulfilling orders manually. Use Cursor, v0.d
 | **Vercel** | Deploy from GitHub |
 | **Firecrawl** | Scrape customer website → structured data |
 
+## Environment Variables
+
+| Where | What to do |
+|-------|-------------|
+| **Vercel** | Project → Settings → Environment Variables → Add `FIRECRAWL_API_KEY` |
+| **Cursor (local)** | Create `.env.local` with `FIRECRAWL_API_KEY=fc-xxx` (never commit) |
+| **v0** | Same as Vercel—v0 deploys via Vercel, so Vercel env vars apply |
+| **GitHub** | Do NOT store API keys. Use Vercel env vars only. |
+
 ---
 
 ## End-to-End Flow (Order In → Chat Live)

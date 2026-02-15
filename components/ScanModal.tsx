@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ModalStep = "scanning" | "results" | "pricing" | null;
+type ModalStep = "scanning" | "results" | "pricing" | "error" | null;
 
 const SCAN_MESSAGES = [
   "Reading your homepage...",
@@ -21,15 +21,6 @@ const PAGE_TIERS = [
   { min: 5000, max: Infinity, tier: "Enterprise", price: null, years: null },
 ];
 
-const DEMO_CATEGORIES = [
-  { label: "Products", count: 120, on: true },
-  { label: "Blog", count: 85, on: true },
-  { label: "Landing pages", count: 45, on: true },
-  { label: "Services", count: 30, on: true },
-  { label: "About/Contact", count: 20, on: true },
-  { label: "Other", count: 50, on: false },
-];
-
 interface ScanModalProps {
   open: boolean;
   onClose: () => void;
@@ -39,23 +30,48 @@ interface ScanModalProps {
 export function ScanModal({ open, onClose, url }: ScanModalProps) {
   const [step, setStep] = useState<ModalStep>("scanning");
   const [scanMessageIndex, setScanMessageIndex] = useState(0);
-  const [pageCount] = useState(350);
-  const [categories, setCategories] = useState(DEMO_CATEGORIES);
+  const [pageCount, setPageCount] = useState(0);
+  const [categories, setCategories] = useState<{ label: string; count: number; on: boolean }[]>([]);
   const [dnsHelp, setDnsHelp] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
-  // Simulate scan completion (replace with real API call)
   useEffect(() => {
-    if (!open || step !== "scanning") return;
-    const done = setTimeout(() => setStep("results"), 3000);
+    if (!open || !url) return;
+
+    setStep("scanning");
+    setError(null);
+
     const msgInterval = setInterval(
       () => setScanMessageIndex((i) => (i + 1) % SCAN_MESSAGES.length),
       800
     );
-    return () => {
-      clearTimeout(done);
-      clearInterval(msgInterval);
-    };
-  }, [open, step]);
+
+    fetch("/api/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Scan failed");
+        setPageCount(data.pageCount);
+        setCategories(
+          (data.categories ?? []).map((c: { label: string; count: number }) => ({
+            ...c,
+            on: true,
+          }))
+        );
+        setStep("results");
+      })
+      .catch((e) => {
+        setError(e.message ?? "Something went wrong. Please try again.");
+        setStep("error");
+      })
+      .finally(() => clearInterval(msgInterval));
+
+    return () => clearInterval(msgInterval);
+  }, [open, url, retryKey]);
 
   const toggleCategory = (label: string) => {
     setCategories((prev) =>
@@ -94,6 +110,19 @@ export function ScanModal({ open, onClose, url }: ScanModalProps) {
             <p className="text-sm text-zinc-400">
               {SCAN_MESSAGES[scanMessageIndex]}
             </p>
+          </div>
+        )}
+
+        {step === "error" && (
+          <div className="p-12 text-center">
+            <p className="text-lg font-medium text-white mb-2">Scan failed</p>
+            <p className="text-sm text-zinc-400 mb-6">{error}</p>
+            <button
+              onClick={() => setRetryKey((k) => k + 1)}
+              className="px-4 py-2 bg-white text-black font-medium rounded-lg hover:bg-zinc-200 transition-colors"
+            >
+              Try again
+            </button>
           </div>
         )}
 
@@ -151,7 +180,7 @@ export function ScanModal({ open, onClose, url }: ScanModalProps) {
                 ${tier.price?.toLocaleString() ?? "Custom"} one-time
               </p>
               <p className="text-sm text-zinc-400 mt-1">
-                {tier.years}-year bundle • Hosting included
+                {tier.years != null ? `${tier.years}-year bundle • ` : ""}Hosting included
               </p>
             </div>
             <label className="flex items-center gap-3 p-3 rounded-lg border border-zinc-700 mb-6 cursor-pointer hover:bg-zinc-800/50">
