@@ -30,6 +30,7 @@ interface ScanModalProps {
 export function ScanModal({ open, onClose, url }: ScanModalProps) {
   const [step, setStep] = useState<ModalStep>("scanning");
   const [scanMessageIndex, setScanMessageIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [pageCount, setPageCount] = useState(0);
   const [categories, setCategories] = useState<{ label: string; count: number; on: boolean }[]>([]);
   const [dnsHelp, setDnsHelp] = useState(false);
@@ -41,11 +42,18 @@ export function ScanModal({ open, onClose, url }: ScanModalProps) {
 
     setStep("scanning");
     setError(null);
+    setProgress(0);
 
     const msgInterval = setInterval(
       () => setScanMessageIndex((i) => (i + 1) % SCAN_MESSAGES.length),
       800
     );
+
+    const startTime = Date.now();
+    const progressInterval = setInterval(() => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      setProgress((p) => Math.min(90, Math.floor(90 * (1 - Math.exp(-elapsed / 90)))));
+    }, 500);
 
     fetch("/api/scan", {
       method: "POST",
@@ -55,6 +63,7 @@ export function ScanModal({ open, onClose, url }: ScanModalProps) {
       .then(async (res) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Scan failed");
+        setProgress(100);
         setPageCount(data.pageCount);
         setCategories(
           (data.categories ?? []).map((c: { label: string; count: number }) => ({
@@ -68,9 +77,15 @@ export function ScanModal({ open, onClose, url }: ScanModalProps) {
         setError(e.message ?? "Something went wrong. Please try again.");
         setStep("error");
       })
-      .finally(() => clearInterval(msgInterval));
+      .finally(() => {
+        clearInterval(msgInterval);
+        clearInterval(progressInterval);
+      });
 
-    return () => clearInterval(msgInterval);
+    return () => {
+      clearInterval(msgInterval);
+      clearInterval(progressInterval);
+    };
   }, [open, url, retryKey]);
 
   const toggleCategory = (label: string) => {
@@ -107,8 +122,17 @@ export function ScanModal({ open, onClose, url }: ScanModalProps) {
             <p className="text-lg font-medium text-white mb-2">
               Scanning your site...
             </p>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-zinc-400 mb-4">
               {SCAN_MESSAGES[scanMessageIndex]}
+            </p>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full bg-white rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-xs text-zinc-500">
+              Typically 2–8 minutes for most sites
             </p>
           </div>
         )}
