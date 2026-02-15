@@ -119,7 +119,7 @@ export async function POST(
 
   await db
     .update(customers)
-    .set({ status: "indexing", updatedAt: new Date() })
+    .set({ status: "dns_setup", updatedAt: new Date() })
     .where(eq(customers.id, customerId));
 
   return NextResponse.json({ success: true, pages: result.data.length });

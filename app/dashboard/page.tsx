@@ -44,6 +44,7 @@ function DashboardContent() {
       status: string;
       primaryColor: string | null;
     } | null;
+    contentCount?: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,16 +65,24 @@ function DashboardContent() {
     if (!data?.customer?.id) return;
     setCrawling(true);
     fetch(`/api/customers/${data.customer.id}/crawl`, { method: "POST" })
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) throw new Error("Crawl failed");
-        return res.json();
-      })
-      .then(() => {
+        const json = await res.json();
         setData((d) =>
           d?.customer
-            ? { ...d, customer: { ...d.customer, status: "indexing" } }
+            ? {
+                ...d,
+                customer: { ...d.customer, status: "dns_setup" },
+                contentCount: json.pages ?? (d.contentCount ?? 0),
+              }
             : d
         );
+        // Refetch to get accurate contentCount
+        const dash = await fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`);
+        if (dash.ok) {
+          const fresh = await dash.json();
+          setData(fresh);
+        }
       })
       .catch(() => setCrawling(false))
       .finally(() => setCrawling(false));
@@ -158,7 +167,7 @@ function DashboardContent() {
                     <li><span className="text-foreground">Website:</span> {customer?.websiteUrl}</li>
                     <li><span className="text-foreground">Prepaid until:</span> {prepaidUntil?.toLocaleDateString()}</li>
                   </ul>
-                  {customer && customer.status === "content_collection" && (
+                  {customer && ["content_collection", "crawling", "indexing"].includes(customer.status) && (
                     <button
                       onClick={handleCrawl}
                       disabled={crawling}
@@ -181,6 +190,46 @@ function DashboardContent() {
                     {" · "}
                     <a href="https://www.godaddy.com/help/add-a-cname-record-19236" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">GoDaddy</a>
                   </p>
+                  {customer?.status === "dns_setup" && (
+                    <button
+                      onClick={async () => {
+                        const res = await fetch(`/api/customers/${customer.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "testing" }),
+                        });
+                        if (res.ok) {
+                          setData((d) =>
+                            d?.customer ? { ...d, customer: { ...d.customer, status: "testing" } } : d
+                          );
+                        }
+                      }}
+                      className="mt-4 px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:opacity-90"
+                    >
+                      I&apos;ve added my DNS
+                    </button>
+                  )}
+                  {customer?.status === "testing" && (
+                    <button
+                      onClick={async () => {
+                        const res = await fetch(`/api/customers/${customer.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ status: "delivered" }),
+                        });
+                        if (res.ok) {
+                          setData((d) =>
+                            d?.customer
+                              ? { ...d, customer: { ...d.customer, status: "delivered" } }
+                              : d
+                          );
+                        }
+                      }}
+                      className="mt-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700"
+                    >
+                      Chatbot is live
+                    </button>
+                  )}
                 </section>
 
                 {/* Checklist */}
@@ -188,7 +237,15 @@ function DashboardContent() {
                   <h2 className="text-lg font-semibold text-foreground mb-4">Checklist</h2>
                   <ul className="space-y-2">
                     {CHECKLIST.map((item, i) => {
-                      const done = i < 2;
+                      const contentCount = data?.contentCount ?? 0;
+                      const done = [
+                        true, // Payment confirmed
+                        true, // Website scanned
+                        contentCount > 0, // Content selected
+                        contentCount > 0, // Bot trained
+                        ["testing", "delivered"].includes(customer?.status ?? ""), // DNS configured (we verify after they add it)
+                        customer?.status === "delivered", // Chatbot live
+                      ][i];
                       return (
                         <li key={i} className="flex items-center gap-2 text-muted-foreground">
                           <span className={done ? "text-green-500" : ""}>{done ? "✓" : "○"}</span>
