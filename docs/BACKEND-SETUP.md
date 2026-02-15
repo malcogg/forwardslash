@@ -16,6 +16,15 @@ Get your connection string from [Neon Console](https://console.neon.tech). Use t
 
 **Vercel:** Add `DATABASE_URL` (or `POSTGRES_URL`) in Project → Settings → Environment Variables.
 
+### Clerk (auth)
+
+Required for `/dashboard` and sign-in to work. Add to Vercel:
+
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (from [Clerk Dashboard](https://dashboard.clerk.com) → API Keys)
+- `CLERK_SECRET_KEY`
+
+Without these, the build uses a placeholder and auth will not work until you add the real keys and redeploy.
+
 ### 2. Push schema to database
 
 After installing deps (`npm install`), run:
