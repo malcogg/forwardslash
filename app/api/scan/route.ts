@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { scans } from "@/db/schema";
 
 const CATEGORY_PATTERNS: { label: string; patterns: RegExp[] }[] = [
   { label: "Products", patterns: [/\/product/i, /\/shop/i, /\/store/i, /\/p\//, /\/item/i, /\/catalog/i] },
@@ -114,10 +116,30 @@ export async function POST(request: Request) {
       categories.push({ label: "Pages", count: pageCount });
     }
 
+    const displayUrl = normalized.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    let scanId: string | undefined;
+
+    if (db) {
+      try {
+        const [row] = await db
+          .insert(scans)
+          .values({
+            url: normalized,
+            pageCount,
+            categories,
+          })
+          .returning({ id: scans.id });
+        scanId = row?.id;
+      } catch (e) {
+        console.warn("Failed to save scan to DB:", e);
+      }
+    }
+
     return NextResponse.json({
       pageCount,
       categories,
-      url: normalized.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+      url: displayUrl,
+      scanId,
     });
   } catch (err) {
     console.error("Scan error:", err);

@@ -28,7 +28,7 @@ Last updated: February 2026
 ### Pricing Flow
 - [x] Tier auto-selected by page count (Small/Medium/Large/Enterprise)
 - [x] DNS upsell checkbox (+$99)
-- [x] "Continue to Payment" → redirects to /dashboard (no real payment yet)
+- [x] "Continue to Payment" → redirects to /checkout with params
 
 ### Demo
 - [x] Demo chat at /chat/demo
@@ -38,13 +38,19 @@ Last updated: February 2026
 ### Backend
 - [x] Firecrawl API integration (scan → page count + categories)
 - [x] FIRECRAWL_API_KEY in env (Vercel + .env.local)
-- [x] /api/scan route
+- [x] /api/scan route (saves scan to DB, returns scanId)
+- [x] Neon Postgres + Drizzle ORM
+- [x] Schema: users, scans, orders, customers, content
+- [x] POST /api/orders (create order + customer)
+- [x] GET /api/dashboard?orderId= (order + customer)
+- [x] /checkout page (collects business info, creates order)
 
-### Dashboard (Skeleton)
-- [x] Order status card (hardcoded)
-- [x] Chatbot details section (placeholder)
-- [x] DNS instructions section (CNAME copy block)
-- [x] Checklist (hardcoded)
+### Dashboard
+- [x] Load order/customer from DB when orderId in URL
+- [x] Order status, amount, bundle from backend
+- [x] Chatbot URL, prepaid until, domain from customer
+- [x] DNS instructions section (CNAME block, provider guides)
+- [x] Checklist
 
 ### Dev / Ops
 - [x] Deployed on Vercel (GitHub → Vercel)
@@ -67,10 +73,10 @@ Last updated: February 2026
 - [ ] Store order: customer, amount, bundle, DNS add-on
 
 ### 3. Data Storage
-- [ ] Database: Neon Postgres or Vercel Postgres (marketplace)
-- [ ] Or KV: Upstash Redis (marketplace)
-- [ ] Schema: orders, customers, content
-- [ ] Customer config: business name, subdomain, colors, logo, welcome message
+- [x] Database: Neon Postgres (Drizzle ORM)
+- [x] Schema: users, scans, orders, customers, content
+- [x] Customer config: business name, subdomain, domain, websiteUrl
+- [ ] Link auth user to order (userId)
 
 ### 4. Post-Payment Flow
 - [ ] After payment: redirect to sign-up
@@ -78,9 +84,9 @@ Last updated: February 2026
 - [ ] Create order record in DB
 
 ### 5. Dashboard (Real Data)
-- [ ] Load order/customer from DB
-- [ ] Order status from backend
-- [ ] Real chatbot URL (once DNS set)
+- [x] Load order/customer from DB
+- [x] Order status from backend
+- [x] Real chatbot URL (from customer record)
 - [ ] Copy buttons for CNAME
 - [ ] Upload extra files
 - [ ] Request change form

@@ -37,6 +37,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
   const [dnsHelp, setDnsHelp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const [scanId, setScanId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !url) return;
@@ -66,6 +67,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
         if (!res.ok) throw new Error(data.error ?? "Scan failed");
         setProgress(100);
         setPageCount(data.pageCount);
+        setScanId(data.scanId ?? null);
         onScanComplete?.(data.url ? (data.url.startsWith("http") ? data.url : `https://${data.url}`) : url);
         setCategories(
           (data.categories ?? []).map((c: { label: string; count: number }) => ({
@@ -223,7 +225,17 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
             </p>
             <button
               className="w-full py-3 px-4 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
-              onClick={() => window.location.href = "/dashboard"}
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (scanId) params.set("scanId", scanId);
+                params.set("pageCount", String(pageCount));
+                params.set("url", url);
+                params.set("years", String(tier.years ?? 1));
+                params.set("dnsHelp", String(dnsHelp));
+                params.set("total", String(totalPrice));
+                params.set("amountCents", String((totalPrice ?? 0) * 100));
+                window.location.href = `/checkout?${params.toString()}`;
+              }}
             >
               Continue to Payment
             </button>
