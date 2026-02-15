@@ -2,23 +2,25 @@
 
 Use this checklist to confirm you're ready to accept and fulfill your first paid order.
 
+**See `PRODUCTION-READINESS-CHECKLIST.md` for detailed DONE vs TODO.**
+
 Last updated: February 2026
 
 ## Pre-Launch (before first order)
 
 ### Landing & Conversion
-- [ ] Landing page live (hero, URL input, Scan button)
-- [ ] Scan modal flow (loading -> results with page count)
-- [ ] Pricing modal (tier auto-selected by page count)
-- [ ] DNS upsell checkbox (+$99)
+- [x] Landing page live (hero, URL input, Scan button)
+- [x] Scan modal flow (loading -> results with page count)
+- [x] Pricing modal (tier auto-selected by page count)
+- [x] DNS upsell checkbox (+$99)
 - [ ] PayPal and/or Stripe checkout wired
 - [ ] Post-payment: required sign-up (Google, Apple, or email) before dashboard
 - [ ] Redirect to dashboard only after account created
 
 ### Demo
-- [ ] Demo chat live at /chat/demo or demo.forwardslash.chat
-- [ ] Demo uses hardcoded content (e.g. Demo Coffee)
-- [ ] Demo shows ChatGPT-style UI and streaming
+- [x] Demo chat live at /chat/demo
+- [x] Demo uses hardcoded content (Demo Coffee)
+- [x] Demo shows chat UI (streaming: add LLM later)
 
 ### Chat (Customer-Facing)
 - [ ] Vercel AI Chatbot template deployed and customized
@@ -27,9 +29,9 @@ Last updated: February 2026
 - [ ] At least one test customer config + content (e.g. Frank Gay) for QA
 
 ### Backend & Data
-- [ ] `FIRECRAWL_API_KEY` in Vercel (Settings → Environment Variables)
-- [ ] `FIRECRAWL_API_KEY` in `.env.local` for Cursor local dev (never commit)
-- [ ] Firecrawl API working (scan → page count + categories)
+- [x] `FIRECRAWL_API_KEY` in Vercel (Settings → Environment Variables)
+- [x] `FIRECRAWL_API_KEY` in `.env.local` for Cursor local dev (never commit)
+- [x] Firecrawl API working (scan → page count + categories)
 - [ ] KV/DB for customer config and content
 - [ ] Admin route or manual process to add customers
 
@@ -59,6 +61,7 @@ Last updated: February 2026
 
 ## Reference Docs
 
+- `PRODUCTION-READINESS-CHECKLIST.md` - DONE vs TODO, build order
 - `DEV-WORKFLOW-MANUAL-FULFILLMENT.md` - Step-by-step fulfillment
 - `dev-instructions.md` - Developer checklist per order
 - `INTERNAL-WORKFLOW.md` - Internal SOP

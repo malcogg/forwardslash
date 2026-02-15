@@ -27,7 +27,7 @@ Current pricing: 1-5 year bundles ($550-$1,950), with optional $100 DNS setup he
     - Status (New -> Content Gathering -> Crawling -> Indexing -> Deployed -> Delivered)
     - Prepaid until date (based on bundle)
     - Folder link (Google Drive / Dropbox)
-- Send thank-you and next steps email (template or Resend / Gmail)
+- Send thank-you and next steps email (Resend – Vercel marketplace)
   - Confirm payment and bundle
   - Expected delivery: 3-10 business days
   - Ask for:
