@@ -49,7 +49,7 @@ function ProfileMenuSignedIn() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-48 py-1 bg-popover border border-border rounded-lg shadow-lg z-[100]">
+        <div className="absolute right-0 top-full mt-2 w-48 py-1 backdrop-blur-xl bg-background/95 dark:bg-background/95 border border-border/60 rounded-lg shadow-xl z-[100]">
           <Link
             href="/dashboard"
             onClick={close}
