@@ -35,6 +35,7 @@ function DashboardContent() {
   const [activePanel, setActivePanel] = useState<"design" | "domains">("design");
   const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
   const [upsellModalOpen, setUpsellModalOpen] = useState(false);
+  const [dnsModalOpen, setDnsModalOpen] = useState(false);
   const scanDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -254,10 +255,10 @@ function DashboardContent() {
               <span className="w-5 shrink-0">{[ "testing", "delivered" ].includes(customer?.status ?? "") ? <Check className="w-4 h-4 text-green-500" /> : <span className="text-muted-foreground/50">○</span>}</span>
               Domains
             </button>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
+            <button onClick={() => setDnsModalOpen(true)} className="w-full flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 rounded hover:text-foreground text-left">
               <span className="w-5 shrink-0">○</span>
-              Chat logs
-            </div>
+              DNS
+            </button>
             <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
               <span className="w-5 shrink-0">○</span>
               Users
@@ -347,11 +348,6 @@ function DashboardContent() {
                     <button onClick={handleCrawl} disabled={crawling || (credits !== null && credits.remaining < 1)} className="w-full px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-50">
                       {crawling ? "Crawling..." : contentCount ? "Refresh content" : "Build my chatbot"}
                     </button>
-                  )}
-                  {contentCount > 0 && customer && (
-                    <Link href={`/chat/c/${customer.id}`} target="_blank" rel="noopener noreferrer" className="block w-full px-3 py-2 text-sm text-center border border-border rounded hover:bg-muted">
-                      Open full chat →
-                    </Link>
                   )}
                 </div>
               )}
@@ -468,6 +464,47 @@ function DashboardContent() {
               className="block w-full py-3 px-6 text-center font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
             >
               Book a call
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* DNS modal */}
+      {dnsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setDnsModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white dark:bg-white rounded-2xl shadow-2xl p-8 text-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDnsModalOpen(false)}
+              className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-semibold mb-4">DNS Setup</h3>
+            <p className="text-gray-600 mb-4">
+              To put your chatbot live at your domain, add a CNAME record in your DNS provider:
+            </p>
+            <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto mb-4">
+              {`Type: CNAME
+Host: ${customer?.subdomain ?? "chat"}
+Value: cname.forwardslash.chat`}
+            </pre>
+            <p className="text-sm text-gray-600 mb-6">
+              Need help? We can do it for you—just book a quick call.
+            </p>
+            <a
+              href={process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/forwardslash/30min"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 px-6 text-center font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
+            >
+              Let us help with DNS
             </a>
           </div>
         </div>
