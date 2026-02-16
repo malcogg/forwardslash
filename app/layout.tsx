@@ -9,9 +9,23 @@ import "./globals.css";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://forwardslash.chat";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "ForwardSlash.Chat - AI Chatbot for Your Website",
   description: "One-time payment. Your own AI assistant. No monthly fees.",
+  openGraph: {
+    title: "ForwardSlash.Chat - AI Chatbot for Your Website",
+    description: "One-time payment. Your own AI assistant. No monthly fees.",
+    images: ["/og-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ForwardSlash.Chat - AI Chatbot for Your Website",
+    description: "One-time payment. Your own AI assistant. No monthly fees.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
