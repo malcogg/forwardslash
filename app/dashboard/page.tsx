@@ -462,7 +462,7 @@ function DashboardContent() {
             </p>
             <p className="text-sm font-medium text-gray-700 mb-2">1-on-1 Strategy Call with the founder</p>
             <a
-              href={process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "#"}
+              href={process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/forwardslash/30min"}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full py-3 px-6 text-center font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
