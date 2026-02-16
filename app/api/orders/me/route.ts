@@ -18,7 +18,8 @@ export async function GET() {
     return NextResponse.json({ error: "Database not configured" }, { status: 503 });
   }
 
-  const userOrders = await db
+  const database = db;
+  const userOrders = await database
     .select()
     .from(orders)
     .where(eq(orders.userId, user.userId))
@@ -26,7 +27,7 @@ export async function GET() {
 
   const result = await Promise.all(
     userOrders.map(async (order) => {
-      const [customer] = await db
+      const [customer] = await database
         .select()
         .from(customers)
         .where(eq(customers.orderId, order.id));
