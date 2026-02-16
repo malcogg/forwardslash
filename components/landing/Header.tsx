@@ -53,8 +53,11 @@ function ProfileMenu() {
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
-          <SignOutButton signOutCallback={() => setOpen(false)} redirectUrl="/">
-            <button className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground text-left">
+          <SignOutButton redirectUrl="/">
+            <button
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground text-left"
+            >
               <LogOut className="w-4 h-4" />
               Sign out
             </button>
