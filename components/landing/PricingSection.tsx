@@ -1,5 +1,8 @@
+"use client";
+
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FadeInSection } from "@/components/FadeInSection";
 
 const INCLUDED = [
   "AI trained on your content",
@@ -16,15 +19,16 @@ const tiers = [
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="py-24 px-6 bg-background">
+    <section id="pricing" className="py-24 px-6">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-16">
+        <FadeInSection className="text-center mb-16">
           <h2 className="font-serif text-3xl md:text-4xl text-foreground">Simple pricing</h2>
           <p className="mt-4 text-muted-foreground">
             One upfront payment. Hosting included. Renewal optional at $495/year after.
           </p>
-        </div>
+        </FadeInSection>
 
+        <FadeInSection delay={100}>
         <div className="grid sm:grid-cols-3 gap-6">
           {tiers.map((tier) => (
             <div
@@ -61,6 +65,7 @@ export function PricingSection() {
         <p className="text-center text-sm text-muted-foreground mt-8">
           +$99 optional: Help with DNS setup. Scan your site to see your recommended tier.
         </p>
+        </FadeInSection>
       </div>
     </section>
   );

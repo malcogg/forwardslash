@@ -89,6 +89,26 @@
       transparent 0
     );
   }
+
+  /* Dot grid for widget cards - dots + subtle tint */
+  .bg-dot-grid-card {
+    background-color: hsl(240 4.8% 95.9% / 0.6);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(240 4% 75% / 0.5) 1px,
+      transparent 0
+    );
+    background-size: 24px 24px;
+  }
+
+  .dark .bg-dot-grid-card {
+    background-color: hsl(240 3.7% 15.9% / 0.5);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      hsl(240 4% 50% / 0.2) 1px,
+      transparent 0
+    );
+  }
   html {
     overflow-x: hidden;
   }
@@ -132,4 +152,20 @@
 
 .animate-float {
   animation: float linear infinite;
+}
+
+/* Scroll-triggered fade-in-up */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
 }

@@ -1,11 +1,14 @@
+"use client";
+
 import { FileText, Globe, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FadeInSection } from "@/components/FadeInSection";
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-24 px-6 bg-background">
+    <section id="how-it-works" className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-20">
+        <FadeInSection className="text-center mb-20">
           <span className="inline-block px-4 py-1.5 text-sm border border-border rounded-full mb-6 text-muted-foreground">
             How it works
           </span>
@@ -17,8 +20,9 @@ export function HowItWorks() {
           <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
             Scan your site, pay once, add your brand. We train your AI and deploy it at your subdomain — no monthly fees.
           </p>
-        </div>
+        </FadeInSection>
 
+        <FadeInSection>
         <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
           <div className="order-2 md:order-1">
             <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">1. Scan your site</h3>
@@ -31,7 +35,9 @@ export function HowItWorks() {
             <ScanCard />
           </div>
         </div>
+        </FadeInSection>
 
+        <FadeInSection delay={100}>
         <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
           <div>
             <BrandCard />
@@ -44,7 +50,9 @@ export function HowItWorks() {
             </p>
           </div>
         </div>
+        </FadeInSection>
 
+        <FadeInSection delay={100}>
         <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
           <div className="order-2 md:order-1">
             <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">3. Connect a custom domain</h3>
@@ -57,7 +65,9 @@ export function HowItWorks() {
             <DomainCard />
           </div>
         </div>
+        </FadeInSection>
 
+        <FadeInSection delay={100}>
         <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
           <div>
             <PaymentsCard />
@@ -70,7 +80,9 @@ export function HowItWorks() {
             </p>
           </div>
         </div>
+        </FadeInSection>
 
+        <FadeInSection delay={100}>
         <div className="text-center mb-16">
           <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">5. Go live!</h3>
           <p className="text-muted-foreground max-w-lg mx-auto mb-6">
@@ -80,8 +92,11 @@ export function HowItWorks() {
             <a href="#scan">Scan your website</a>
           </Button>
         </div>
+        </FadeInSection>
 
+        <FadeInSection delay={150}>
         <ChatDemo />
+        </FadeInSection>
       </div>
     </section>
   );
@@ -89,7 +104,7 @@ export function HowItWorks() {
 
 function ScanCard() {
   return (
-    <div className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
+    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
       <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
         <h4 className="text-sm font-medium mb-4 text-foreground">Scan results</h4>
         <div className="space-y-4">
@@ -121,7 +136,7 @@ function ScanCard() {
 
 function BrandCard() {
   return (
-    <div className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
+    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
       <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
         <div className="flex items-center justify-between mb-6">
           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -150,7 +165,7 @@ function BrandCard() {
 
 function DomainCard() {
   return (
-    <div className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
+    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
       <div className="bg-card rounded-lg p-5 shadow-sm border border-border space-y-3">
         <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
           <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -173,7 +188,7 @@ function DomainCard() {
 
 function PaymentsCard() {
   return (
-    <div className="bg-muted/30 dark:bg-muted/20 rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
+    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
       <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
         <div className="flex items-center justify-between mb-6">
           <span className="text-primary font-bold text-xl">One-time payment</span>
@@ -202,7 +217,7 @@ function PaymentsCard() {
 
 function ChatDemo() {
   return (
-    <div className="rounded-3xl p-8 bg-muted/20 dark:bg-muted/10 border border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.25)]">
+    <div className="rounded-3xl p-8 bg-dot-grid-card border border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.25)]">
       <div className="max-w-2xl mx-auto bg-card rounded-xl shadow-lg border border-border overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
