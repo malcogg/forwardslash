@@ -78,11 +78,34 @@ function DashboardContent() {
   const [credits, setCredits] = useState<{ remaining: number; creditsLimit: number } | null>(null);
 
   useEffect(() => {
-    fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`)
-      .then((res) => !res.ok ? Promise.reject(new Error("Failed")) : res.json())
-      .then(setData)
-      .catch(() => setError("Could not load dashboard"))
-      .finally(() => setLoading(false));
+    let mounted = true;
+    const load = (retries = 2) => {
+      fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`)
+        .then(async (res) => {
+          if (res.ok) {
+            const json = await res.json();
+            if (mounted) setData(json);
+            if (mounted) setLoading(false);
+            return;
+          }
+          const err = await res.json().catch(() => ({}));
+          // Retry on 401 (session may not be ready yet after sign-up redirect)
+          if (res.status === 401 && retries > 0) {
+            setTimeout(() => load(retries - 1), 800);
+            return;
+          }
+          if (mounted) setError((err as { error?: string }).error ?? "Could not load dashboard");
+          if (mounted) setLoading(false);
+        })
+        .catch(() => {
+          if (mounted) setError("Could not load dashboard");
+          if (mounted) setLoading(false);
+        });
+    };
+    setLoading(true);
+    setError(null);
+    load();
+    return () => { mounted = false; };
   }, [orderId]);
 
   useEffect(() => {

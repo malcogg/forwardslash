@@ -12,15 +12,16 @@ import { getOrCreateUser } from "@/lib/auth";
  */
 export async function GET(request: Request) {
   const user = await getOrCreateUser();
-  if (!user?.userId) {
+  if (!user) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const orderId = searchParams.get("orderId");
 
-  if (!db) {
-    return NextResponse.json({ error: "Database not configured" }, { status: 503 });
+  // When DB not configured or user not in DB yet, return empty dashboard (allows "Get started" UX)
+  if (!db || !user.userId) {
+    return NextResponse.json({ order: null, customer: null });
   }
 
   let order;
