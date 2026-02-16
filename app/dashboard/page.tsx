@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { Globe, Check, ChevronDown, X } from "lucide-react";
+import { Globe, Check, ChevronDown, X, Monitor, Tablet, Smartphone } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CustomerChat } from "@/components/CustomerChat";
 
@@ -37,6 +37,7 @@ function DashboardContent() {
   const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
   const [upsellModalOpen, setUpsellModalOpen] = useState(false);
   const [dnsModalOpen, setDnsModalOpen] = useState(false);
+  const [previewView, setPreviewView] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const scanDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -236,7 +237,7 @@ function DashboardContent() {
               <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${scanDropdownOpen ? "rotate-180" : ""}`} />
             </button>
             {scanDropdownOpen && (
-              <div className="absolute left-0 right-0 top-full mt-1 py-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+              <div className="absolute left-full top-0 ml-2 py-1 min-w-[200px] bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
                 {myOrders.length === 0 ? (
                   <Link href="/" onClick={() => setScanDropdownOpen(false)} className="block px-3 py-2 text-sm text-foreground hover:bg-accent">
                     Scan new site
@@ -427,8 +428,47 @@ function DashboardContent() {
         {/* Chat preview */}
         <div className="flex-1 min-w-[320px] p-4 flex flex-col bg-muted/10">
           {customer ? (
-            <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex-1 flex flex-col min-h-0">
-              <CustomerChat customerId={customer.id} businessName={customer.businessName} primaryColor={customer.primaryColor ?? "#000"} compact={false} />
+            <div className="flex-1 flex flex-col min-h-0 min-w-0">
+              {/* Device view toggle + preview frame */}
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">Live preview</span>
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-muted/50 border border-border">
+                  <button
+                    onClick={() => setPreviewView("desktop")}
+                    className={`p-1.5 rounded-md transition-colors ${previewView === "desktop" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label="Desktop view"
+                  >
+                    <Monitor className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPreviewView("tablet")}
+                    className={`p-1.5 rounded-md transition-colors ${previewView === "tablet" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label="Tablet view"
+                  >
+                    <Tablet className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPreviewView("mobile")}
+                    className={`p-1.5 rounded-md transition-colors ${previewView === "mobile" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-label="Mobile view"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div
+                className={`flex-1 flex justify-center min-h-0 transition-[max-width] duration-200 ${
+                  previewView === "desktop" ? "max-w-full" : previewView === "tablet" ? "max-w-[480px] mx-auto" : "max-w-[320px] mx-auto"
+                }`}
+              >
+                <div
+                  className={`w-full h-full bg-card border border-border shadow-lg overflow-hidden flex flex-col min-h-0 ring-1 ring-black/5 transition-all duration-200 ${
+                    previewView === "desktop" ? "rounded-xl" : previewView === "tablet" ? "rounded-2xl" : "rounded-[2rem]"
+                  }`}
+                >
+                  <CustomerChat customerId={customer.id} businessName={customer.businessName} primaryColor={customer.primaryColor ?? "#000"} compact={false} />
+                </div>
+              </div>
             </div>
           ) : (
             <div className="bg-card rounded-lg border border-border shadow-sm flex-1 flex flex-col items-center justify-center p-8">
@@ -447,10 +487,10 @@ function DashboardContent() {
         </div>
       </div>
 
-      {/* CTA / Upsell banner - bottom left */}
+      {/* CTA / Upsell banner - bottom right to avoid covering sidebar user profile */}
       <button
         onClick={() => setUpsellModalOpen(true)}
-        className="fixed bottom-4 left-4 z-40 w-48 p-4 bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200 text-left hover:shadow-xl transition-shadow"
+        className="fixed bottom-4 right-4 z-40 w-48 p-4 bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200 text-left hover:shadow-xl transition-shadow"
       >
         <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Also from us</p>
         <p className="text-sm font-semibold text-gray-900 mt-0.5">Web design & marketing</p>
