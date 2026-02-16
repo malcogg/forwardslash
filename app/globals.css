@@ -90,22 +90,23 @@
     );
   }
 
-  /* Dot grid for widget cards - dots + subtle tint */
-  .bg-dot-grid-card {
-    background-color: hsl(240 4.8% 95.9% / 0.6);
+  /* Dots behind widget - peeks out from behind card & shadow */
+  .bg-dots-behind-widget {
+    background-color: hsl(240 4.8% 96.5%);
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(240 4% 75% / 0.5) 1px,
+      hsl(240 4% 75% / 0.45) 1px,
       transparent 0
     );
-    background-size: 24px 24px;
+    background-size: 20px 20px;
+    background-position: 10px 10px; /* aligned grid */
   }
 
-  .dark .bg-dot-grid-card {
-    background-color: hsl(240 3.7% 15.9% / 0.5);
+  .dark .bg-dots-behind-widget {
+    background-color: hsl(240 3.7% 12%);
     background-image: radial-gradient(
       circle at 1px 1px,
-      hsl(240 4% 50% / 0.2) 1px,
+      hsl(240 4% 45% / 0.25) 1px,
       transparent 0
     );
   }

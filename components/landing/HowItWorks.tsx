@@ -104,8 +104,9 @@ export function HowItWorks() {
 
 function ScanCard() {
   return (
-    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
+    <div className="relative">
+      <div className="absolute -inset-6 bg-dots-behind-widget rounded-2xl -z-10" aria-hidden />
+      <div className="bg-card rounded-xl p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1),0_8px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] border border-border">
         <h4 className="text-sm font-medium mb-4 text-foreground">Scan results</h4>
         <div className="space-y-4">
           <div>
@@ -136,8 +137,9 @@ function ScanCard() {
 
 function BrandCard() {
   return (
-    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
+    <div className="relative">
+      <div className="absolute -inset-6 bg-dots-behind-widget rounded-2xl -z-10" aria-hidden />
+      <div className="bg-card rounded-xl p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1),0_8px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] border border-border">
         <div className="flex items-center justify-between mb-6">
           <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
             <span className="text-foreground font-bold">A</span>
@@ -165,8 +167,9 @@ function BrandCard() {
 
 function DomainCard() {
   return (
-    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border space-y-3">
+    <div className="relative">
+      <div className="absolute -inset-6 bg-dots-behind-widget rounded-2xl -z-10" aria-hidden />
+      <div className="bg-card rounded-xl p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1),0_8px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] border border-border space-y-3">
         <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
           <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
           <span className="text-sm text-foreground">chat.mybusiness.com</span>
@@ -188,8 +191,9 @@ function DomainCard() {
 
 function PaymentsCard() {
   return (
-    <div className="bg-dot-grid-card rounded-xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.3)]">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
+    <div className="relative">
+      <div className="absolute -inset-6 bg-dots-behind-widget rounded-2xl -z-10" aria-hidden />
+      <div className="bg-card rounded-xl p-5 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1),0_8px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] border border-border">
         <div className="flex items-center justify-between mb-6">
           <span className="text-primary font-bold text-xl">One-time payment</span>
         </div>
@@ -217,8 +221,9 @@ function PaymentsCard() {
 
 function ChatDemo() {
   return (
-    <div className="rounded-3xl p-8 bg-dot-grid-card border border-border shadow-[0_4px_24px_-4px_rgba(0,0,0,0.08),0_2px_8px_-2px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.25)]">
-      <div className="max-w-2xl mx-auto bg-card rounded-xl shadow-lg border border-border overflow-hidden">
+    <div className="relative">
+      <div className="absolute -inset-8 bg-dots-behind-widget rounded-3xl -z-10" aria-hidden />
+      <div className="max-w-2xl mx-auto bg-card rounded-xl p-8 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1),0_12px_24px_-8px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] border border-border overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
