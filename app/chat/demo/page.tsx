@@ -1,17 +1,103 @@
 "use client";
 
-import { useChat } from "ai/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 import { ArrowUp } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const SUGGESTIONS = [
+const PILL_SUGGESTIONS = [
   "What is ForwardSlash.Chat?",
   "How much does it cost?",
   "How does it work?",
-  "What's included?",
+  "Can I see a demo?",
 ];
+
+const QUESTION_SUGGESTIONS = [
+  "What services do you offer?",
+  "Tell me about your products",
+  "How do I get in touch?",
+];
+
+const FALLBACK =
+  "Sorry, I'm still learning! Ask me about pricing, how it works, domain setup, scanning your site, or anything else about ForwardSlash.Chat.";
+
+const TYPING_DELAY_MS = 1600;
+
+function getHardcodedResponse(message: string): string | null {
+  const q = message.toLowerCase().trim();
+  if (!q) return null;
+
+  const pairs: { keywords: string[]; answer: string }[] = [
+    {
+      keywords: ["what is", "what does forwardslash do", "what is forwardslash.chat"],
+      answer:
+        "ForwardSlash.Chat gives your business a custom AI chatbot trained only on your website content. It lives at chat.yourdomain.com or yourdomain.com/chat, answers 24/7 using just your info — no generic AI, no data sharing. Pay once, no monthly fees. Hosting included.",
+    },
+    {
+      keywords: ["how much", "pricing", "cost", "plans", "bundles", "price"],
+      answer: `One-time payment only — no monthly fees!
+• 1-Year Starter: $550
+• 2-Year Recommended: $850 (save $190)
+• 3-Year: $1,250
+After prepaid period, optional renewal $495/year. Optional $99 DNS help. Scan your site to see your exact price.`,
+    },
+    {
+      keywords: ["how does it work", "how to get started", "process", "steps"],
+      answer: `Super easy: Enter your website URL — we scan and train the AI on your content.
+Customize branding (logo, colors).
+Connect your domain (chat.yourdomain.com or yourdomain.com/chat).
+Pay once — we deploy it live in 3–10 days.
+No monthly fees, hosting included.`,
+    },
+    {
+      keywords: ["scan", "crawl", "add my site", "how to scan"],
+      answer:
+        "Just enter your website URL in the dashboard. We crawl your pages, pull services/FAQs/products/blog, and train your private AI. No tech skills needed — we do everything.",
+    },
+    {
+      keywords: ["domain", "subdomain", "chat.mywebsite.com", "mybusiness.com/chat", "custom domain"],
+      answer:
+        "Your chatbot lives on your own domain — subdomain like chat.mybusiness.com or path like mybusiness.com/chat. Add one DNS record (we can help for $99). It becomes part of your site.",
+    },
+    {
+      keywords: ["monthly", "subscription", "fees", "recurring", "is there monthly fee"],
+      answer:
+        "No monthly fees — ever. Pay one time for creation + hosting during your chosen period. Optional renewal after that is $495/year if you want us to keep hosting.",
+    },
+    {
+      keywords: ["demo", "see it live", "try it", "test", "demo chat"],
+      answer:
+        "You're chatting with the demo right now! Ask anything about ForwardSlash.Chat — pricing, setup, features — or scan your own site to see a custom version.",
+    },
+    {
+      keywords: ["dashboard", "how to use dashboard", "what is dashboard"],
+      answer:
+        "After payment, you get a dashboard to track your order, upload extra files, customize branding (logo/colors), view DNS instructions, and see your live chatbot URL once deployed.",
+    },
+    {
+      keywords: ["branding", "customize", "logo", "colors"],
+      answer:
+        "In your dashboard, upload your logo/favicon, pick accent/background colors — your chatbot will match your brand perfectly.",
+    },
+    {
+      keywords: ["how long", "delivery time", "when will it be ready"],
+      answer:
+        "We deliver in 3–10 business days after payment and DNS setup. Scan your site first to get started fast!",
+    },
+    {
+      keywords: ["help", "support", "contact", "questions"],
+      answer:
+        "We're here to help! Reply here or email support@forwardslash.chat. For DNS or custom needs, we offer $99 setup help.",
+    },
+  ];
+
+  for (const { keywords, answer } of pairs) {
+    for (const kw of keywords) {
+      if (q.includes(kw)) return answer;
+    }
+  }
+  return null;
+}
 
 function MarkdownText({ text }: { text: string }) {
   const parts: React.ReactNode[] = [];
@@ -80,20 +166,30 @@ function MarkdownText({ text }: { text: string }) {
   return <>{parts}</>;
 }
 
+type Message = { role: "user" | "assistant"; content: string; id?: string };
+
 export default function DemoChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, input, setInput, append, isLoading, error } = useChat({
-    api: "/api/chat/demo",
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const send = (text: string) => {
     const t = text.trim();
     if (!t || isLoading) return;
-    append({ role: "user", content: t });
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", content: t, id: `u-${Date.now()}` }]);
+    setIsLoading(true);
+
+    setTimeout(() => {
+      const reply = getHardcodedResponse(t) ?? FALLBACK;
+      setMessages((prev) => [...prev, { role: "assistant", content: reply, id: `a-${Date.now()}` }]);
+      setIsLoading(false);
+    }, TYPING_DELAY_MS);
   };
 
   return (
@@ -119,17 +215,25 @@ export default function DemoChatPage() {
             <>
               <p className="text-lg font-medium mb-1">Hi! I&apos;m the ForwardSlash demo assistant.</p>
               <p className="text-muted-foreground mb-6">Ask me about our product, pricing, how it works, or what&apos;s included.</p>
-              {error && (
-                <div className="mb-6 px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
-                  Couldn&apos;t connect. The demo needs <code className="bg-muted px-1 rounded">OPENAI_API_KEY</code> set in your environment.
-                </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {SUGGESTIONS.map((s) => (
+
+              <div className="grid grid-cols-4 gap-1.5 mb-6">
+                {PILL_SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="px-4 py-3 rounded-lg text-sm text-left border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
+                    className="px-2 py-1.5 rounded-lg text-[11px] leading-tight text-left border bg-card hover:bg-accent hover:text-accent-foreground transition-colors min-w-0"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                {QUESTION_SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => send(s)}
+                    className="block w-full text-left text-sm text-muted-foreground hover:text-foreground py-2"
                   >
                     {s}
                   </button>
@@ -139,7 +243,7 @@ export default function DemoChatPage() {
           ) : (
             <div className="space-y-6">
               {messages.map((m, i) => (
-                <div key={(m as { id?: string }).id ?? `msg-${i}`} className={m.role === "user" ? "flex justify-end" : ""}>
+                <div key={m.id ?? `msg-${i}`} className={m.role === "user" ? "flex justify-end" : ""}>
                   <div
                     className={`inline-block max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
                       m.role === "user"
@@ -157,11 +261,6 @@ export default function DemoChatPage() {
                   </div>
                 </div>
               ))}
-              {error && (
-                <div className="px-4 py-3 rounded-lg bg-destructive/10 border border-destructive/20 text-sm text-destructive">
-                  Couldn&apos;t connect. The demo needs <code className="bg-muted px-1 rounded">OPENAI_API_KEY</code> set in your environment.
-                </div>
-              )}
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="inline-block px-4 py-3 rounded-2xl bg-muted/80 text-muted-foreground text-sm">
