@@ -1,93 +1,111 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useChat } from "ai/react";
 import Link from "next/link";
 import { ArrowUp } from "lucide-react";
+import { useEffect, useRef } from "react";
 
-const DEMO_CONTENT = [
-  {
-    title: "Our Story",
-    url: "https://demo-coffee.com/about",
-    content:
-      "Demo Coffee Roasters started in 2018 in a small garage in Portland. We source single-origin beans from Ethiopia, Colombia, and Guatemala. We roast in small batches every Tuesday.",
-  },
-  {
-    title: "Best Sellers",
-    url: "https://demo-coffee.com/shop",
-    content:
-      "1. **Ethiopian Yirgacheffe** - $18/250g - bright, floral, citrus notes\n2. **Colombian Supremo** - $16/250g - chocolate, caramel sweetness\n3. **Guatemala Antigua** - $17/250g - balanced, smoky finish",
-  },
-  {
-    title: "Brew Guide",
-    url: "https://demo-coffee.com/brew",
-    content:
-      "**V60**: 15g coffee to 250g water, 92°C, 2:30 brew time.\n**French Press**: 30g to 500g water, 4 minutes steep.",
-  },
-  {
-    title: "Latest Blog",
-    url: "https://demo-coffee.com/blog/latest",
-    content:
-      "**Why Light Roasts Are Making a Comeback** (Feb 2026) - Light roasts preserve origin flavors and highlight subtle notes. Perfect for pour-over and AeroPress.",
-  },
+const SUGGESTIONS = [
+  "What is ForwardSlash.Chat?",
+  "How much does it cost?",
+  "How does it work?",
+  "What's included?",
 ];
 
-function findAnswer(query: string): string {
-  const q = query.toLowerCase();
-  if (q.includes("bean") || q.includes("product") || q.includes("sell") || q.includes("colombian") || q.includes("ethiopian")) {
-    const c = DEMO_CONTENT.find((x) => x.title === "Best Sellers");
-    return c ? `${c.content}\n\n[${c.title}](${c.url})` : "I don't have info on that yet.";
+function MarkdownText({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining) {
+    const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    const boldMatch = remaining.match(/\*\*([^*]+)\*\*/);
+    const codeMatch = remaining.match(/`([^`]+)`/);
+
+    let match: RegExpMatchArray | null = null;
+    let type: "link" | "bold" | "code" = "link";
+    let idx = remaining.length;
+
+    if (linkMatch && linkMatch.index !== undefined && linkMatch.index < idx) {
+      match = linkMatch;
+      type = "link";
+      idx = linkMatch.index;
+    }
+    if (boldMatch && boldMatch.index !== undefined && boldMatch.index < idx) {
+      match = boldMatch;
+      type = "bold";
+      idx = boldMatch.index;
+    }
+    if (codeMatch && codeMatch.index !== undefined && codeMatch.index < idx) {
+      match = codeMatch;
+      type = "code";
+      idx = codeMatch.index;
+    }
+
+    if (match && match.index !== undefined) {
+      if (idx > 0) {
+        parts.push(
+          <span key={key++}>
+            {remaining.slice(0, idx).split("\n").map((line, i) => (
+              <span key={i}>{line}{i < remaining.slice(0, idx).split("\n").length - 1 ? <br /> : null}</span>
+            ))}
+          </span>
+        );
+      }
+      if (type === "link") {
+        parts.push(
+          <a key={key++} href={match[2]} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            {match[1]}
+          </a>
+        );
+      } else if (type === "bold") {
+        parts.push(<strong key={key++}>{match[1]}</strong>);
+      } else if (type === "code") {
+        parts.push(<code key={key++} className="bg-muted px-1 rounded text-sm">{match[1]}</code>);
+      }
+      remaining = remaining.slice(idx + match[0].length);
+    } else {
+      parts.push(
+        <span key={key++}>
+          {remaining.split("\n").map((line, i) => (
+            <span key={i}>{line}{i < remaining.split("\n").length - 1 ? <br /> : null}</span>
+          ))}
+        </span>
+      );
+      break;
+    }
   }
-  if (q.includes("brew") || q.includes("v60") || q.includes("french press") || q.includes("recipe")) {
-    const c = DEMO_CONTENT.find((x) => x.title === "Brew Guide");
-    return c ? `${c.content}\n\n[${c.title}](${c.url})` : "I don't have info on that yet.";
-  }
-  if (q.includes("blog") || q.includes("latest") || q.includes("light roast")) {
-    const c = DEMO_CONTENT.find((x) => x.title === "Latest Blog");
-    return c ? `${c.content}\n\n[${c.title}](${c.url})` : "I don't have info on that yet.";
-  }
-  if (q.includes("about") || q.includes("story") || q.includes("start")) {
-    const c = DEMO_CONTENT.find((x) => x.title === "Our Story");
-    return c ? `${c.content}\n\n[${c.title}](${c.url})` : "I don't have info on that yet.";
-  }
-  return "I don't have info on that yet — ask about our beans, brewing, or latest roast!";
+
+  return <>{parts}</>;
 }
 
-const SUGGESTIONS = ["What beans do you have?", "How do I brew with V60?", "Show me your best sellers", "Tell me about your latest blog"];
-
 export default function DemoChatPage() {
-  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { messages, input, setInput, append, isLoading } = useChat({
+    api: "/api/chat/demo",
+  });
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const send = (text: string) => {
-    if (!text.trim() || loading) return;
-    const userMsg = text.trim();
-    setInput("");
-    setMessages((m) => [...m, { role: "user", content: userMsg }]);
-    setLoading(true);
-    setTimeout(() => {
-      const reply = findAnswer(userMsg);
-      setMessages((m) => [...m, { role: "assistant", content: reply }]);
-      setLoading(false);
-    }, 600);
+    const t = text.trim();
+    if (!t || isLoading) return;
+    append({ role: "user", content: t });
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+    <div className="flex flex-col h-dvh bg-background">
+      <header className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#6B4E3D" }}>
-            <span className="text-white text-sm">☕</span>
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground text-sm font-medium">/</span>
           </div>
-          <span className="font-semibold text-white">Demo Coffee Roasters</span>
+          <span className="font-semibold">ForwardSlash.Chat</span>
         </div>
-        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
-          ← Back to ForwardSlash
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Back to site
         </Link>
       </header>
 
@@ -95,14 +113,14 @@ export default function DemoChatPage() {
         <div className="max-w-2xl mx-auto px-4 py-8">
           {messages.length === 0 ? (
             <>
-              <p className="text-lg font-medium text-white mb-1">Hi! I&apos;m your friendly coffee assistant.</p>
-              <p className="text-zinc-400 mb-6">Ask me about beans, brewing, or our latest roast!</p>
+              <p className="text-lg font-medium mb-1">Hi! I&apos;m the ForwardSlash demo assistant.</p>
+              <p className="text-muted-foreground mb-6">Ask me about our product, pricing, how it works, or what&apos;s included.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="px-4 py-2 rounded-lg text-sm text-zinc-300 bg-zinc-800/50 border border-zinc-700 hover:bg-zinc-700/50 text-left"
+                    className="px-4 py-3 rounded-lg text-sm text-left border bg-card hover:bg-accent hover:text-accent-foreground transition-colors"
                   >
                     {s}
                   </button>
@@ -111,48 +129,28 @@ export default function DemoChatPage() {
             </>
           ) : (
             <div className="space-y-6">
-              {messages.map((msg, i) => (
-                <div key={i} className={msg.role === "user" ? "text-right" : ""}>
+              {messages.map((m, i) => (
+                <div key={(m as { id?: string }).id ?? `msg-${i}`} className={m.role === "user" ? "flex justify-end" : ""}>
                   <div
-                    className={`inline-block max-w-[85%] px-4 py-2 rounded-xl text-sm ${
-                      msg.role === "user"
-                        ? "bg-zinc-700 text-white"
-                        : "bg-zinc-800/80 text-zinc-200 whitespace-pre-wrap"
+                    className={`inline-block max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
+                      m.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/80"
                     }`}
                   >
-                    {msg.role === "assistant" ? (
-                      <div className="prose prose-invert prose-sm max-w-none">
-                        {msg.content.split("\n").map((line, j) => {
-                          const linkMatch = line.match(/\[([^\]]+)\]\(([^)]+)\)/);
-                          if (linkMatch) {
-                            return (
-                              <div key={j}>
-                                <a href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-[#6B4E3D] underline">
-                                  {linkMatch[1]}
-                                </a>
-                              </div>
-                            );
-                          }
-                          const boldMatch = line.match(/\*\*([^*]+)\*\*/);
-                          if (boldMatch) {
-                            return (
-                              <p key={j}>
-                                <strong>{boldMatch[1]}</strong>
-                              </p>
-                            );
-                          }
-                          return <p key={j}>{line}</p>;
-                        })}
+                    {m.role === "assistant" ? (
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        <MarkdownText text={m.content} />
                       </div>
                     ) : (
-                      msg.content
+                      m.content
                     )}
                   </div>
                 </div>
               ))}
-              {loading && (
-                <div className="text-left">
-                  <div className="inline-block px-4 py-2 rounded-xl bg-zinc-800/80 text-zinc-400 text-sm">
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="inline-block px-4 py-3 rounded-2xl bg-muted/80 text-muted-foreground text-sm">
                     Thinking...
                   </div>
                 </div>
@@ -163,25 +161,25 @@ export default function DemoChatPage() {
         </div>
       </div>
 
-      <div className="p-4 border-t border-zinc-800">
+      <div className="p-4 border-t shrink-0">
         <div className="max-w-2xl mx-auto">
-          <div className="flex gap-2 rounded-xl border border-zinc-700 bg-zinc-900/50 focus-within:border-zinc-600">
+          <div className="flex gap-2 rounded-xl border bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
-              placeholder="Send a message..."
-              className="flex-1 px-4 py-3 bg-transparent text-white placeholder-zinc-500 focus:outline-none text-sm"
+              placeholder="Ask about ForwardSlash.Chat..."
+              className="flex-1 px-4 py-3 bg-transparent placeholder:text-muted-foreground focus:outline-none text-sm"
             />
             <button
               onClick={() => send(input)}
-              disabled={!input.trim() || loading}
-              className="p-2 rounded-lg bg-zinc-700 text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-zinc-600"
+              disabled={!input.trim() || isLoading}
+              className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
             >
               <ArrowUp className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-xs text-zinc-500 mt-2 text-center">Powered by ForwardSlash.Chat</p>
+          <p className="text-xs text-muted-foreground mt-2 text-center">Demo chatbot · Powered by ForwardSlash.Chat</p>
         </div>
       </div>
     </div>
