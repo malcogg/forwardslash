@@ -175,7 +175,7 @@ db/
 ### Landing page
 
 - **Sections:** Hero (scan input), How it works (Scan, Brand, Domain, Payments, Chat demo), Pricing, FAQ, CTA
-- **Design:** Dot grid behind widget cards (`bg-dots-behind-widget`), scroll-triggered fade-in (`FadeInSection`), light/dark theme
+- **Design:** Scroll-triggered fade-in (`FadeInSection`), light/dark theme
 - **Theme:** `next-themes`; `ThemeToggle` in Header, Demo, Dashboard
 - **Particles:** `ParticlesBackground` for floating dots
 
