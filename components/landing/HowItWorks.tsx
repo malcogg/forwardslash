@@ -210,19 +210,11 @@ function PaymentsCard() {
 function ChatDemo() {
   return (
     <div className="max-w-2xl mx-auto bg-card rounded-xl p-8 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.1),0_12px_24px_-8px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.4)] border border-border overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-              <span className="text-foreground text-xs font-bold">A</span>
-            </div>
-            <span className="text-sm font-medium text-foreground">Your Business</span>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+          <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <span className="text-foreground text-xs font-bold">A</span>
           </div>
-          <nav className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Chat</span>
-            <span className="text-sm text-muted-foreground">About</span>
-            <span className="text-sm text-muted-foreground">Pricing</span>
-            <button className="px-3 py-1 text-xs bg-emerald-600 text-white rounded-full">Sign up</button>
-          </nav>
+          <span className="text-sm font-medium text-foreground">Your Business</span>
         </div>
 
         <div className="p-8 text-center">

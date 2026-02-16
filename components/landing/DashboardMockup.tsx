@@ -171,24 +171,43 @@ function ChatPreview({ dark }: { dark: boolean }) {
   const border = dark ? "border-zinc-600" : "border-gray-200";
   const text = dark ? "text-zinc-100" : "text-gray-900";
   const muted = dark ? "text-zinc-400" : "text-gray-500";
+  const inputBg = dark ? "border-zinc-600 bg-zinc-800" : "border-gray-200 bg-gray-50";
 
   return (
-    <div className={`${bg} rounded-lg border ${border} shadow-sm overflow-hidden h-full min-h-[200px]`}>
-      <div className={`flex items-center gap-2 px-4 py-3 border-b ${border}`}>
-        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${dark ? "bg-zinc-600" : "bg-gray-700"}`}>
-          <span className="text-white text-xs">MF</span>
+    <div className={`${bg} rounded-lg border ${border} shadow-sm overflow-hidden h-full min-h-[200px] flex flex-col`}>
+      <div className={`flex items-center gap-2 px-4 py-3 border-b ${border} shrink-0`}>
+        <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${dark ? "bg-zinc-600" : "bg-gray-300"}`}>
+          <span className={`text-xs font-bold ${dark ? "text-zinc-100" : "text-gray-700"}`}>A</span>
         </div>
-        <span className={`text-sm font-medium ${text}`}>Your chatbot</span>
+        <span className={`text-sm font-medium ${text}`}>Your Business</span>
       </div>
-      <div className="p-6">
-        <p className={`text-sm ${muted} mb-4`}>Hi! Ask me anything about your business.</p>
-        <div className={`border rounded-lg p-3 ${dark ? "border-zinc-600 bg-zinc-800" : "border-gray-200 bg-gray-50"}`}>
+      <div className="p-6 flex-1 flex flex-col">
+        <h2 className={`text-xl font-semibold mb-2 ${text}`}>How can I help?</h2>
+        <p className={`text-sm ${muted} mb-6`}>
+          Ask me about your services, products,
+          <br />
+          or anything on your website.
+        </p>
+        <div className={`border rounded-lg p-3 ${inputBg} mb-6`}>
           <input
             type="text"
-            placeholder="Ask anything..."
+            placeholder="Ask anything"
             className={`w-full text-sm outline-none bg-transparent ${dark ? "text-zinc-100 placeholder:text-zinc-500" : "text-gray-900 placeholder:text-gray-500"}`}
             readOnly
           />
+          <div className="flex items-center justify-between mt-2">
+            <div className={`flex items-center gap-1 text-xs ${muted}`}>
+              <span>📎</span> 0 Files
+            </div>
+            <button className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center shrink-0">
+              <span className="text-white text-xs">↑</span>
+            </button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className={`text-sm ${muted}`}>What services do you offer?</p>
+          <p className={`text-sm ${muted}`}>Tell me about your products</p>
+          <p className={`text-sm ${muted}`}>How do I get in touch?</p>
         </div>
       </div>
     </div>

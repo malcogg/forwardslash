@@ -27,28 +27,27 @@ export default function CustomerChatPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <p className="text-zinc-400">Loading...</p>
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Loading...</p>
       </main>
     );
   }
 
   if (error || !customer) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-zinc-950 p-8">
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 p-8">
         <div className="text-center">
-          <p className="text-zinc-400 mb-4">{error ?? "Chatbot not found"}</p>
-          <Link href="/" className="text-blue-400 hover:underline">Back to ForwardSlash.Chat</Link>
+          <p className="text-gray-600 mb-4">{error ?? "Chatbot not found"}</p>
+          <Link href="/" className="text-emerald-600 hover:underline">Back to ForwardSlash.Chat</Link>
         </div>
       </main>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
-        <span className="font-semibold text-white">{customer.businessName}</span>
-        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
+    <div className="h-screen flex flex-col bg-gray-50">
+      <header className="flex items-center justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
+        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
           ForwardSlash.Chat
         </Link>
       </header>
