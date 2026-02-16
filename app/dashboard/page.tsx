@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
-import { Globe, Check, ChevronDown } from "lucide-react";
+import { Globe, Check, ChevronDown, X } from "lucide-react";
 import { CustomerChat } from "@/components/CustomerChat";
 
 const ACCENT_COLORS = [
@@ -34,6 +34,7 @@ function DashboardContent() {
 
   const [activePanel, setActivePanel] = useState<"design" | "domains">("design");
   const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
+  const [upsellModalOpen, setUpsellModalOpen] = useState(false);
   const scanDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -427,6 +428,50 @@ function DashboardContent() {
           )}
         </div>
       </div>
+
+      {/* CTA / Upsell banner - bottom left */}
+      <button
+        onClick={() => setUpsellModalOpen(true)}
+        className="fixed bottom-4 left-4 z-40 w-48 p-4 bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200 text-left hover:shadow-xl transition-shadow"
+      >
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Also from us</p>
+        <p className="text-sm font-semibold text-gray-900 mt-0.5">Web design & marketing</p>
+        <p className="text-xs text-gray-600 mt-1">Full overhauls for local businesses →</p>
+      </button>
+
+      {/* Upsell modal */}
+      {upsellModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setUpsellModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white dark:bg-white rounded-2xl shadow-2xl p-8 text-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setUpsellModalOpen(false)}
+              className="absolute top-4 right-4 p-1 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-semibold mb-4">Turn old dumb websites into smart ones</h3>
+            <p className="text-gray-600 mb-6">
+              Let us full overhaul your brand and we&apos;ll bring in real local customers.
+            </p>
+            <p className="text-sm font-medium text-gray-700 mb-2">1-on-1 Strategy Call with the founder</p>
+            <a
+              href={process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 px-6 text-center font-semibold bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors"
+            >
+              Book a call
+            </a>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
