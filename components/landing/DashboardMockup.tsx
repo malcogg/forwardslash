@@ -12,7 +12,7 @@ export function DashboardMockup() {
         <div className="flex-1 flex justify-center">
           <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-md text-xs text-muted-foreground">
             <Globe className="w-3 h-3" />
-            app-cf78suqho.forwardslash.chat
+            forwardslash.chat/dashboard
           </div>
         </div>
       </div>
@@ -20,8 +20,8 @@ export function DashboardMockup() {
       <div className="flex">
         <div className="w-56 border-r border-border bg-muted/20 p-4 hidden md:block">
           <div className="flex items-center gap-2 mb-6">
-            <div className="text-xs text-muted-foreground">MA</div>
-            <span className="text-sm font-medium text-foreground">Marketing Advisor</span>
+            <div className="text-xs text-muted-foreground">MF</div>
+            <span className="text-sm font-medium text-foreground">Michael Francis</span>
           </div>
           <nav className="space-y-1">
             <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
@@ -55,9 +55,9 @@ export function DashboardMockup() {
             <div className="text-xs text-primary mt-1">Upgrade</div>
             <div className="flex items-center gap-2 mt-4">
               <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-foreground text-xs font-medium">NG</span>
+                <span className="text-foreground text-xs font-medium">MF</span>
               </div>
-              <span className="text-sm text-foreground">Nikolas Gibbons</span>
+              <span className="text-sm text-foreground">Michael Francis</span>
             </div>
           </div>
         </div>
@@ -91,10 +91,10 @@ export function DashboardMockup() {
             <div className="bg-muted/50 rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground text-xs">NG</span>
+                  <span className="text-primary-foreground text-xs">MF</span>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-foreground">Nikolas Gibbons</div>
+                  <div className="text-sm font-medium text-foreground">Michael Francis</div>
                   <div className="text-xs text-muted-foreground">Marketing Advisor</div>
                 </div>
               </div>
@@ -176,9 +176,9 @@ function ChatPreview() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground text-xs">NG</span>
+            <span className="text-primary-foreground text-xs">MF</span>
           </div>
-          <span className="text-sm font-medium text-foreground">Nikolas Gibbons</span>
+          <span className="text-sm font-medium text-foreground">Michael Francis</span>
         </div>
         <nav className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">Chat</span>

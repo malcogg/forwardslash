@@ -49,8 +49,8 @@ export function HowItWorks() {
           <div className="order-2 md:order-1">
             <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">3. Connect a custom domain</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Add your own subdomain. Your AI chat will live at chat.yourdomain.com — a seamless part of your brand,
-              not a third-party widget.
+              Add your own subdomain or path. Your AI chat will live at chat.mybusiness.com or mybusiness.com/chat —
+              a seamless part of your brand, not a third-party widget.
             </p>
           </div>
           <div className="order-1 md:order-2">
@@ -65,7 +65,7 @@ export function HowItWorks() {
           <div>
             <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">4. Pay once</h3>
             <p className="text-muted-foreground leading-relaxed">
-              Choose a 1–5 year bundle. One payment covers creation, hosting, and maintenance. No monthly fees or
+              Choose a 1–3 year bundle. One payment covers creation, hosting, and maintenance. No monthly fees or
               per-message charges.
             </p>
           </div>
@@ -151,13 +151,17 @@ function BrandCard() {
 function DomainCard() {
   return (
     <div className="bg-muted/50 rounded-xl p-6">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
+      <div className="bg-card rounded-lg p-5 shadow-sm border border-border space-y-3">
         <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
-          <Globe className="w-4 h-4 text-muted-foreground" />
+          <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
           <span className="text-sm text-foreground">chat.mybusiness.com</span>
         </div>
-        <div className="mt-4 flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+        <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
+          <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-sm text-foreground">mybusiness.com/chat</span>
+        </div>
+        <div className="mt-2 flex items-center gap-2">
+          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center shrink-0">
             <span className="text-white text-xs">✓</span>
           </div>
           <span className="text-sm text-green-600 dark:text-green-400">Domain connected</span>
