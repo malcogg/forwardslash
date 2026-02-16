@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { DashboardMockup } from "@/components/landing/DashboardMockup";
 
 type HeroSectionProps = {
   onScanClick?: (url: string) => void;
@@ -52,6 +53,8 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
             <p className="text-xs text-muted-foreground mt-3">One-time payment • Your domain • Delivered in 3–10 days</p>
           </div>
         </div>
+
+        <DashboardMockup />
       </div>
     </section>
   );
