@@ -22,7 +22,7 @@ export function Footer() {
           </Link>
         </nav>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} ForwardSlash.Chat. All rights reserved.
           </p>
@@ -34,12 +34,6 @@ export function Footer() {
               Privacy
             </Link>
           </div>
-        </div>
-
-        <div className="overflow-hidden text-center">
-          <h2 className="text-[4rem] md:text-[6rem] lg:text-[8rem] tracking-tight leading-none lowercase font-serif font-light text-muted-foreground/30">
-            forwardslash.chat
-          </h2>
         </div>
       </div>
     </footer>

@@ -21,10 +21,8 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
   };
 
   return (
-    <section id="scan" className="relative w-full overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#e8f5e9]/30 via-[#e3f2fd]/30 to-[#f3e5f5]/20 pointer-events-none" />
-
-      <div className="relative max-w-7xl mx-auto px-6 pt-16 pb-8">
+    <section id="scan" className="w-full bg-background">
+      <div className="max-w-7xl mx-auto px-6 pt-16 pb-8">
         <div className="text-center max-w-3xl mx-auto">
           <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl leading-tight text-balance text-foreground">
             AI chatbot for your website.
