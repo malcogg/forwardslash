@@ -1,16 +1,54 @@
-import { Globe } from "lucide-react";
+"use client";
+
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+import { Globe, Check } from "lucide-react";
+
+const ACCENT_COLORS = [
+  "#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4",
+  "#3b82f6", "#8b5cf6", "#ec4899", "#f43f5e", "#0ea5e9", "#6366f1",
+  "#a855f7", "#d946ef", "#1e293b", "#374151", "#4b5563", "#6b7280",
+];
 
 export function DashboardMockup() {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  // Invert: light page → dark mockup, dark page → light mockup (contrast)
+  const darkMockup = !mounted || theme !== "dark";
+
+  const base = darkMockup
+    ? {
+        bg: "bg-zinc-800",
+        card: "bg-zinc-700",
+        border: "border-zinc-600",
+        text: "text-zinc-100",
+        muted: "text-zinc-400",
+        bar: "bg-zinc-700/80",
+        input: "bg-zinc-900/50 border-zinc-600",
+      }
+    : {
+        bg: "bg-gray-50",
+        card: "bg-white",
+        border: "border-gray-200",
+        text: "text-gray-900",
+        muted: "text-gray-500",
+        bar: "bg-gray-100",
+        input: "bg-white border-gray-300",
+      };
+
   return (
-    <div className="w-full max-w-5xl mx-auto bg-card rounded-xl shadow-2xl border border-border overflow-hidden mt-12">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+    <div className={`w-full max-w-5xl mx-auto rounded-xl shadow-2xl overflow-hidden mt-12 border ${base.border} ${base.bg}`}>
+      <div className={`flex items-center gap-2 px-4 py-3 border-b ${base.border} ${base.bar}`}>
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-red-400" />
           <div className="w-3 h-3 rounded-full bg-yellow-400" />
           <div className="w-3 h-3 rounded-full bg-green-400" />
         </div>
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-md text-xs text-muted-foreground">
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-md text-xs ${base.muted} ${darkMockup ? "bg-zinc-600/50" : "bg-gray-200"}`}>
             <Globe className="w-3 h-3" />
             forwardslash.chat/dashboard
           </div>
@@ -18,201 +56,139 @@ export function DashboardMockup() {
       </div>
 
       <div className="flex">
-        <div className="w-56 border-r border-border bg-muted/20 p-4 hidden md:block">
+        <div className={`w-56 border-r ${base.border} p-4 hidden md:block ${darkMockup ? "bg-zinc-800/50" : "bg-gray-100/80"}`}>
           <div className="flex items-center gap-2 mb-6">
-            <div className="text-xs text-muted-foreground">MF</div>
-            <span className="text-sm font-medium text-foreground">Michael Francis</span>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${darkMockup ? "bg-zinc-600" : "bg-gray-700"}`}>
+              <span className={`text-xs font-medium ${darkMockup ? "text-zinc-100" : "text-white"}`}>MF</span>
+            </div>
+            <span className={`text-sm font-medium ${base.text} truncate`}>Michael Francis</span>
           </div>
-          <nav className="space-y-1">
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>▸</span> View site
+
+          <div className="mb-4">
+            <div className={`flex items-center justify-between px-2 py-1.5 text-sm ${base.muted}`}>
+              <span>▸</span> Scan site
             </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>✦</span> Training
+          </div>
+
+          <nav className="space-y-0.5 flex-1">
+            <div className={`flex items-center gap-2 px-2 py-1.5 text-sm ${base.muted}`}>
+              <Check className="w-4 h-4 text-green-500 shrink-0" />
+              Training
             </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm bg-muted rounded text-foreground">
-              <span>◉</span> Design
+            <div className={`flex items-center gap-2 px-2 py-1.5 text-sm ${darkMockup ? "bg-zinc-600/50 text-zinc-100" : "bg-gray-200 text-gray-900"} rounded`}>
+              <Check className="w-4 h-4 text-green-500 shrink-0" />
+              Design
             </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>⊕</span> Domains
+            <div className={`flex items-center gap-2 px-2 py-1.5 text-sm ${base.muted}`}>
+              <span className="text-gray-400">○</span>
+              Domains
             </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>$</span> Get paid
+            <div className={`flex items-center gap-2 px-2 py-1.5 text-sm ${base.muted}`}>
+              <span className="text-gray-400">○</span>
+              DNS
             </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>☰</span> Chat logs
+            <div className={`flex items-center gap-2 px-2 py-1.5 text-sm ${base.muted}`}>
+              <span className="text-gray-400">○</span>
+              Users
             </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>☺</span> Users
-            </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span>⚙</span> Settings
+            <div className={`flex items-center gap-2 px-2 py-1.5 text-sm ${base.muted}`}>
+              <span className="text-gray-400">○</span>
+              Settings
             </div>
           </nav>
-          <div className="mt-auto pt-8">
-            <div className="text-xs text-muted-foreground">Messages</div>
-            <div className="text-sm text-foreground">0 / 100</div>
-            <div className="text-xs text-primary mt-1">Upgrade</div>
+
+          <div className={`pt-6 border-t ${base.border}`}>
+            <div className={`text-xs ${base.muted}`}>Content pages</div>
+            <div className={`text-sm ${base.text}`}>12 crawled</div>
             <div className="flex items-center gap-2 mt-4">
-              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-foreground text-xs font-medium">MF</span>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${darkMockup ? "bg-zinc-600" : "bg-gray-200"}`}>
+                <span className={`text-xs font-medium ${base.text}`}>MF</span>
               </div>
-              <span className="text-sm text-foreground">Michael Francis</span>
+              <span className={`text-sm ${base.text} truncate`}>Michael Francis</span>
             </div>
           </div>
         </div>
 
-        <div className="w-64 border-r border-border p-4 hidden lg:block">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-medium text-foreground">Design</h3>
-            <div className="flex gap-1">
-              <button className="px-3 py-1 text-xs bg-muted rounded text-foreground">General</button>
-              <button className="px-3 py-1 text-xs text-muted-foreground">About</button>
-              <button className="px-3 py-1 text-xs text-muted-foreground">Pricing</button>
-            </div>
-          </div>
+        <div className={`w-64 border-r ${base.border} p-4 hidden lg:block ${base.bg}`}>
+          <h3 className={`font-medium ${base.text} mb-6`}>Design</h3>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-muted-foreground">Display name</label>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm text-foreground"></span>
-                <div className="w-4 h-4 border border-border rounded" />
-              </div>
+              <label className={`text-sm ${base.muted}`}>Display name</label>
+              <div className={`text-sm ${base.text} mt-1`}>My Business</div>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground">Logo</label>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm text-foreground"></span>
-                <div className="w-8 h-4 bg-muted rounded-full relative">
-                  <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-card rounded-full shadow border border-border" />
-                </div>
+              <label className={`text-sm ${base.muted}`}>Logo</label>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center mt-1 ${darkMockup ? "bg-zinc-600" : "bg-gray-200"}`}>
+                <span className={`text-sm font-medium ${base.text}`}>M</span>
               </div>
             </div>
-            <div className="bg-muted/50 rounded-lg p-4 border border-border">
+            <div className={`rounded-lg p-4 border ${base.border} ${darkMockup ? "bg-zinc-700/50" : "bg-gray-100"}`}>
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground text-xs">MF</span>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${darkMockup ? "bg-zinc-600" : "bg-gray-700"}`}>
+                  <span className="text-white text-xs">MF</span>
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-foreground">Michael Francis</div>
-                  <div className="text-xs text-muted-foreground">Marketing Advisor</div>
+                  <div className={`text-sm font-medium ${base.text}`}>Michael Francis</div>
+                  <div className={`text-xs ${base.muted}`}>My Business</div>
                 </div>
               </div>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground">Favicon</label>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs text-muted-foreground">Square image at least 32×32</span>
-                <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground text-xs">✦</span>
-                </div>
+              <label className={`text-sm ${base.muted}`}>Favicon</label>
+              <div className={`w-6 h-6 rounded flex items-center justify-center mt-1 ${darkMockup ? "bg-zinc-600" : "bg-gray-700"}`}>
+                <span className="text-white text-xs">✦</span>
               </div>
             </div>
             <div>
-              <label className="text-sm text-muted-foreground">Background</label>
+              <label className={`text-sm ${base.muted}`}>Accent</label>
+              <div className="w-6 h-6 rounded-full mt-1 border border-gray-400 bg-black" />
             </div>
             <div>
-              <label className="text-sm text-muted-foreground">Accent</label>
-              <div className="w-6 h-6 rounded-full bg-foreground mt-1" />
-            </div>
-            <div>
-              <label className="text-sm text-muted-foreground">Heading</label>
+              <label className={`text-sm ${base.muted}`}>Heading</label>
               <div className="flex flex-wrap gap-1.5 mt-1">
-                {[
-                  "#ef4444",
-                  "#f97316",
-                  "#eab308",
-                  "#22c55e",
-                  "#14b8a6",
-                  "#06b6d4",
-                  "#3b82f6",
-                  "#8b5cf6",
-                  "#ec4899",
-                  "#f43f5e",
-                  "#0ea5e9",
-                  "#6366f1",
-                  "#a855f7",
-                  "#d946ef",
-                  "#1e293b",
-                  "#374151",
-                  "#4b5563",
-                  "#6b7280",
-                ].map((color) => (
-                  <div key={color} className="w-5 h-5 rounded-full" style={{ backgroundColor: color }} />
+                {ACCENT_COLORS.map((c) => (
+                  <div key={c} className="w-5 h-5 rounded-full" style={{ backgroundColor: c }} />
                 ))}
-              </div>
-            </div>
-            <div>
-              <label className="text-sm text-muted-foreground">Description</label>
-              <div className="text-xs mt-1 text-foreground">#000000</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Start by describing
-                <br />
-                how your agent responds.
               </div>
             </div>
           </div>
           <div className="flex gap-2 mt-6">
-            <button className="px-3 py-1.5 text-sm border border-border rounded text-foreground">
-              Discard changes
-            </button>
-            <button className="px-3 py-1.5 text-sm bg-foreground text-background rounded">
-              Save changes
-            </button>
+            <button className={`px-3 py-1.5 text-sm border ${base.border} rounded ${base.text}`}>Discard</button>
+            <button className={`px-3 py-1.5 text-sm rounded ${darkMockup ? "bg-zinc-100 text-zinc-900" : "bg-gray-900 text-white"}`}>Save</button>
           </div>
         </div>
 
-        <div className="flex-1 p-4">
-          <ChatPreview />
+        <div className="flex-1 p-4 min-w-0">
+          <ChatPreview dark={darkMockup} />
         </div>
       </div>
     </div>
   );
 }
 
-function ChatPreview() {
+function ChatPreview({ dark }: { dark: boolean }) {
+  const bg = dark ? "bg-zinc-700" : "bg-white";
+  const border = dark ? "border-zinc-600" : "border-gray-200";
+  const text = dark ? "text-zinc-100" : "text-gray-900";
+  const muted = dark ? "text-zinc-400" : "text-gray-500";
+
   return (
-    <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground text-xs">MF</span>
-          </div>
-          <span className="text-sm font-medium text-foreground">Michael Francis</span>
+    <div className={`${bg} rounded-lg border ${border} shadow-sm overflow-hidden h-full min-h-[200px]`}>
+      <div className={`flex items-center gap-2 px-4 py-3 border-b ${border}`}>
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${dark ? "bg-zinc-600" : "bg-gray-700"}`}>
+          <span className="text-white text-xs">MF</span>
         </div>
-        <nav className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">Chat</span>
-          <span className="text-sm text-muted-foreground">About</span>
-          <span className="text-sm text-muted-foreground">Pricing</span>
-          <span className="text-sm text-muted-foreground">Log in</span>
-          <button className="px-3 py-1 text-xs bg-foreground text-background rounded-full">Sign up</button>
-        </nav>
+        <span className={`text-sm font-medium ${text}`}>Your chatbot</span>
       </div>
-
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-semibold mb-2 text-foreground">How can I help?</h2>
-        <p className="text-sm text-muted-foreground mb-6">
-          Start by asking a question or
-          <br />
-          customizing how your agent responds.
-        </p>
-
-        <div className="max-w-md mx-auto">
-          <div className="border border-input rounded-lg p-3">
-            <input
-              type="text"
-              placeholder="Ask anything"
-              className="w-full text-sm outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
-            />
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>📎</span> 0 Files
-              </div>
-              <button className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground text-xs">↑</span>
-              </button>
-            </div>
-          </div>
+      <div className="p-6">
+        <p className={`text-sm ${muted} mb-4`}>Hi! Ask me anything about your business.</p>
+        <div className={`border rounded-lg p-3 ${dark ? "border-zinc-600 bg-zinc-800" : "border-gray-200 bg-gray-50"}`}>
+          <input
+            type="text"
+            placeholder="Ask anything..."
+            className={`w-full text-sm outline-none bg-transparent ${dark ? "text-zinc-100 placeholder:text-zinc-500" : "text-gray-900 placeholder:text-gray-500"}`}
+            readOnly
+          />
         </div>
       </div>
     </div>
