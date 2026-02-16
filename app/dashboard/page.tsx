@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { Globe, Check, ChevronDown, X } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { CustomerChat } from "@/components/CustomerChat";
 
 const ACCENT_COLORS = [
@@ -126,16 +127,35 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
+      <main className="min-h-screen flex flex-col bg-background">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 shrink-0">
+          <span className="text-xs text-muted-foreground">forwardslash.chat</span>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
+            <ThemeToggle />
+            <UserButton afterSignOutUrl="/" />
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
       </main>
     );
   }
 
   if (error || (orderId && !data?.order)) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-background p-8">
-        <div className="text-center max-w-md">
+      <main className="min-h-screen flex flex-col bg-background">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30 shrink-0">
+          <span className="text-xs text-muted-foreground">forwardslash.chat</span>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
+            <ThemeToggle />
+            <UserButton afterSignOutUrl="/" />
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center max-w-md">
           <p className="text-muted-foreground mb-4">{error ?? "Order not found"}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
@@ -163,6 +183,7 @@ function DashboardContent() {
             </Link>
           </div>
         </div>
+        </div>
       </main>
     );
   }
@@ -189,6 +210,7 @@ function DashboardContent() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
+          <ThemeToggle />
           <UserButton afterSignOutUrl="/" />
         </div>
       </div>

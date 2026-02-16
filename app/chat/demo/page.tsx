@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "ai/react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 import { ArrowUp } from "lucide-react";
 import { useEffect, useRef } from "react";
@@ -104,9 +105,12 @@ export default function DemoChatPage() {
           </div>
           <span className="font-semibold">ForwardSlash.Chat</span>
         </div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-          ← Back to site
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+            ← Back to site
+          </Link>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto">
