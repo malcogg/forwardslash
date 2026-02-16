@@ -155,7 +155,6 @@ function BrandCard() {
             <div className="w-8 h-8 rounded-full bg-primary" />
           </div>
         </div>
-      </div>
     </div>
   );
 }
@@ -177,7 +176,6 @@ function DomainCard() {
           </div>
           <span className="text-sm text-green-600 dark:text-green-400">Domain connected</span>
         </div>
-      </div>
     </div>
   );
 }
@@ -205,7 +203,6 @@ function PaymentsCard() {
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">Hosting included • No monthly fees</p>
-      </div>
     </div>
   );
 }
