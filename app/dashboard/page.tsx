@@ -282,17 +282,19 @@ function DashboardContent() {
               <span className="w-5 shrink-0">○</span>
               DNS
             </button>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span className="w-5 shrink-0">○</span>
-              Users
-            </div>
-            <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
-              <span className="w-5 shrink-0">○</span>
-              Settings
-            </div>
           </nav>
 
-          <div className="pt-6 border-t border-border">
+          {/* CTA / Upsell - below DNS, in sidebar */}
+          <button
+            onClick={() => setUpsellModalOpen(true)}
+            className="w-full mt-4 p-3 rounded-lg bg-white dark:bg-zinc-800 border border-border text-left hover:shadow-md transition-shadow"
+          >
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Also from us</p>
+            <p className="text-xs font-semibold text-foreground mt-0.5">Web design & marketing</p>
+            <p className="text-[10px] text-muted-foreground mt-1">Full overhauls for local businesses →</p>
+          </button>
+
+          <div className="pt-6 border-t border-border mt-4">
             <div className="text-xs text-muted-foreground">Content pages</div>
             <div className="text-sm text-foreground">{hasOrder ? contentCount : "0"} crawled</div>
             {credits && <div className="text-xs text-primary mt-1">{credits.remaining} / {credits.creditsLimit} credits</div>}
@@ -486,16 +488,6 @@ function DashboardContent() {
           )}
         </div>
       </div>
-
-      {/* CTA / Upsell banner - bottom right to avoid covering sidebar user profile */}
-      <button
-        onClick={() => setUpsellModalOpen(true)}
-        className="fixed bottom-4 right-4 z-40 w-48 p-4 bg-white dark:bg-white rounded-xl shadow-lg border border-gray-200 text-left hover:shadow-xl transition-shadow"
-      >
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Also from us</p>
-        <p className="text-sm font-semibold text-gray-900 mt-0.5">Web design & marketing</p>
-        <p className="text-xs text-gray-600 mt-1">Full overhauls for local businesses →</p>
-      </button>
 
       {/* Upsell modal */}
       {upsellModalOpen && (
