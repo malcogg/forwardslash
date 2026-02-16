@@ -187,7 +187,6 @@ function DashboardContent() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
-          <Link href="/admin" className="text-xs text-muted-foreground hover:text-foreground">Admin</Link>
           <UserButton afterSignOutUrl="/" />
         </div>
       </div>
