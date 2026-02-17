@@ -27,12 +27,19 @@ In Vercel → Project → Settings → Environment Variables, ensure:
 4. If **Failed**: click to see the error (often 400 = wrong signing secret, 500 = Resend/our code error)
 5. If **Succeeded**: webhook ran; check Resend dashboard for the email
 
-## 4. Development vs production
+## 4. Development vs production (important)
 
-- Production: webhook URL must be `https://forwardslash.chat/api/webhooks/clerk`
-- If testing locally: use [ngrok](https://ngrok.com) to expose localhost and point Clerk to the ngrok URL
+Clerk **Development** and **Production** are separate. Webhooks and signing secrets are per instance.
+
+- You must create the webhook in the **Production** instance (same one handling your live signups)
+- The `CLERK_WEBHOOK_SIGNING_SECRET` in Vercel must be from the Production webhook — not from Development
+- When you first added the webhook, it may have been in Dev; re-create it in Production and update the secret
 
 ## 5. Resend
 
-- Check [Resend dashboard](https://resend.com/emails) for delivery status
+- Check [Resend dashboard](https://resend.com/emails) → Emails — do you see any send attempts?
 - If the domain isn't verified, emails may fail or go to spam
+- Check spam/junk folder
+
+## 6. Quick test
+Clerk Dashboard (Production) → Webhooks → your endpoint → **Testing** tab → Send example `user.created`. Then check Resend dashboard for a new email.
