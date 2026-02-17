@@ -138,7 +138,6 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
         }, minWait);
       })
       .catch(() => {
-        setRoastError("Could not analyze site");
         setRoastData({
           ageScore: 0,
           reasons: ["Standard site setup"],
