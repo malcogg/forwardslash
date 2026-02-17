@@ -1,21 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 
 export const PENDING_SCAN_URL_KEY = "forwardslash_pending_scan_url";
 
-type ModalStep = "signup-prompt" | "scanning" | "already-scanned" | "results" | "pricing" | "error" | null;
+type ModalStep =
+  | "roasting"
+  | "roast-results"
+  | "signup-prompt"
+  | "scanning"
+  | "already-scanned"
+  | "results"
+  | "pricing"
+  | "error"
+  | null;
 
-const SCAN_MESSAGES = [
-  "Reading your homepage...",
-  "Looking at your services and pricing...",
-  "Finding your blog and testimonials...",
-  "Checking contact and booking info...",
-  "Almost ready...",
+const ROASTING_MESSAGES = [
+  "Scanning your site...",
+  "Reading the homepage...",
+  "Detecting tech stack...",
+  "Analyzing signals...",
+  "Almost there...",
 ];
 
 const PAGE_TIERS = [
@@ -23,6 +32,22 @@ const PAGE_TIERS = [
   { min: 300, max: 1000, tier: "Medium", price: 850, years: 2 },
   { min: 1000, max: 5000, tier: "Large", price: 1250, years: 3 },
   { min: 5000, max: Infinity, tier: "Enterprise", price: null, years: null },
+];
+
+type RoastData = {
+  ageScore: number;
+  reasons: string[];
+  roastLevel: string;
+  roastEmoji: string;
+  url: string;
+} | null;
+
+const MIN_ROAST_DISPLAY_MS = 2500;
+const BULLET_DELAY_MS = 400;
+const ROAST_PLAN_LINKS = [
+  { label: "Quick $350 Starter", href: "/checkout?plan=starter" },
+  { label: "Full $1k Build", href: "/checkout?plan=new-build" },
+  { label: "Redesign $2k", href: "/checkout?plan=redesign" },
 ];
 
 interface ScanModalProps {
@@ -33,7 +58,11 @@ interface ScanModalProps {
 }
 
 export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps) {
-  const [step, setStep] = useState<ModalStep>("signup-prompt");
+  const [step, setStep] = useState<ModalStep>("roasting");
+  const [roastMessageIndex, setRoastMessageIndex] = useState(0);
+  const [roastData, setRoastData] = useState<RoastData>(null);
+  const [visibleReasonIndex, setVisibleReasonIndex] = useState(0);
+  const [roastLevelVisible, setRoastLevelVisible] = useState(false);
   const [scanMessageIndex, setScanMessageIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [pageCount, setPageCount] = useState(0);
@@ -44,21 +73,106 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
   const [scanId, setScanId] = useState<string | null>(null);
   const [scannedAt, setScannedAt] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!open || !url) return;
-    // Spec: No full crawl until after signup. Avoid burning Firecrawl credits on non-paying users.
-    setStep("signup-prompt");
-    setError(null);
-  }, [open, url]);
+  const displayUrl = url ? url.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
 
-  const handleContinueToScan = () => {
+  const handleContinueToScan = useCallback(() => {
     if (!url) return;
     try {
       sessionStorage.setItem(PENDING_SCAN_URL_KEY, url);
     } catch {
       /* ignore */
     }
-  };
+  }, [url]);
+
+  // When modal opens with URL → start roasting
+  useEffect(() => {
+    if (!open || !url) return;
+    setStep("roasting");
+    setRoastData(null);
+    setRoastError(null);
+    setVisibleReasonIndex(0);
+    setRoastLevelVisible(false);
+    setRoastMessageIndex(0);
+    setError(null);
+  }, [open, url]);
+
+  // Roasting: cycle messages + call API
+  useEffect(() => {
+    if (step !== "roasting" || !url) return;
+
+    const msgInterval = setInterval(() => {
+      setRoastMessageIndex((i) => (i + 1) % ROASTING_MESSAGES.length);
+    }, 1800);
+
+    const start = Date.now();
+    const normalized = url.startsWith("http") ? url : `https://${url}`;
+
+    fetch("/api/scan/roast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: normalized }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const elapsed = Date.now() - start;
+        const minWait = Math.max(0, MIN_ROAST_DISPLAY_MS - elapsed);
+
+        setTimeout(() => {
+          if (data.fallback || data.error) {
+            setRoastData({
+              ageScore: 0,
+              reasons: ["Standard site setup"],
+              roastLevel: "We couldn't peek at your site this time — no worries!",
+              roastEmoji: "👋",
+              url: displayUrl,
+            });
+          } else {
+            setRoastData({
+              ageScore: data.ageScore ?? 0,
+              reasons: Array.isArray(data.reasons) ? data.reasons : ["Standard site setup"],
+              roastLevel: data.roastLevel ?? "Looking good!",
+              roastEmoji: data.roastEmoji ?? "👍",
+              url: data.url ?? displayUrl,
+            });
+          }
+          setStep("roast-results");
+        }, minWait);
+      })
+      .catch(() => {
+        setRoastError("Could not analyze site");
+        setRoastData({
+          ageScore: 0,
+          reasons: ["Standard site setup"],
+          roastLevel: "We couldn't peek this time — sign up for a full scan!",
+          roastEmoji: "👋",
+          url: displayUrl,
+        });
+        setStep("roast-results");
+      });
+
+    return () => clearInterval(msgInterval);
+  }, [step, url, displayUrl]);
+
+  // Roast results: sequential bullet reveals
+  useEffect(() => {
+    if (step !== "roast-results" || !roastData) return;
+    const reasons = roastData.reasons;
+    if (reasons.length === 0) {
+      setRoastLevelVisible(true);
+      return;
+    }
+    const timer = setInterval(() => {
+      setVisibleReasonIndex((i) => {
+        if (i >= reasons.length - 1) {
+          setRoastLevelVisible(true);
+          clearInterval(timer);
+          return i;
+        }
+        return i + 1;
+      });
+    }, BULLET_DELAY_MS);
+    return () => clearInterval(timer);
+  }, [step, roastData]);
 
   const toggleCategory = (label: string) => {
     setCategories((prev) =>
@@ -88,13 +202,135 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
           <X className="w-5 h-5" />
         </button>
 
+        {/* Roasting: scanning animation */}
+        {step === "roasting" && (
+          <div className="p-10 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+              <div className="flex gap-1.5 items-end">
+                <span className="w-2 h-4 bg-emerald-500 rounded-full animate-pulse" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-6 bg-emerald-500 rounded-full animate-pulse" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-5 bg-emerald-500 rounded-full animate-pulse" style={{ animationDelay: "300ms" }} />
+              </div>
+            </div>
+            <p className="text-lg font-medium text-foreground mb-2">
+              {ROASTING_MESSAGES[roastMessageIndex]}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Analyzing {displayUrl}
+            </p>
+          </div>
+        )}
+
+        {/* Roast results: sequential reveals */}
+        {step === "roast-results" && roastData && (
+          <div className="p-8">
+            <h2 className="text-xl font-semibold text-foreground mb-1">
+              We peeked at your site...
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Here&apos;s what we noticed:
+            </p>
+
+            {/* Bullets with checkmarks (sequential) */}
+            <div className="space-y-2 mb-6">
+              {roastData.reasons.slice(0, visibleReasonIndex + 1).map((reason, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg border border-border transition-all duration-300",
+                    i === visibleReasonIndex ? "bg-emerald-500/5 border-emerald-500/30" : "bg-muted/30"
+                  )}
+                >
+                  <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3.5 h-3.5" />
+                  </span>
+                  <span className="text-sm text-foreground">{reason}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Roast level */}
+            {roastLevelVisible && (
+              <div
+                className="mb-6 p-4 rounded-xl bg-muted/50 border border-border animate-in fade-in slide-in-from-bottom-2 duration-500"
+              >
+                <p className="text-sm font-medium text-foreground">
+                  {roastData.roastEmoji} {roastData.roastLevel}
+                </p>
+              </div>
+            )}
+
+            {/* Value prop - AI chatbot focus */}
+            {roastLevelVisible && (
+              <p className="text-sm text-muted-foreground mb-6 animate-in fade-in duration-300">
+                Don&apos;t worry — old sites work great. We just make them smarter by adding our custom AI chatbot that knows your company.
+              </p>
+            )}
+
+            {/* CTA buttons */}
+            {roastLevelVisible && (
+              <div className="space-y-3 mb-6 animate-in fade-in duration-300">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Add an AI chatbot to your site
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {ROAST_PLAN_LINKS.map(({ label, href }) => (
+                    <Link
+                      key={href}
+                      href={`${href}${href.includes("?") ? "&" : "?"}url=${encodeURIComponent(url)}`}
+                      onClick={handleContinueToScan}
+                      className="py-2.5 px-3 text-center text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Disclaimer */}
+            {roastLevelVisible && (
+              <p className="text-xs text-muted-foreground text-center mb-6 animate-in fade-in duration-300">
+                Just having fun with tech signals — your business is awesome.
+              </p>
+            )}
+
+            {/* Signup CTA */}
+            {roastLevelVisible && (
+              <div className="pt-4 border-t border-border animate-in fade-in duration-300">
+                <p className="text-sm text-muted-foreground text-center mb-3">
+                  Create a free account to see your full scan and get your AI chatbot.
+                </p>
+                <SignedOut>
+                  <Link
+                    href="/sign-up"
+                    onClick={handleContinueToScan}
+                    className="inline-flex items-center justify-center w-full py-3 px-6 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-opacity"
+                  >
+                    Create free account
+                  </Link>
+                </SignedOut>
+                <SignedIn>
+                  <Link
+                    href="/dashboard"
+                    onClick={handleContinueToScan}
+                    className="inline-flex items-center justify-center w-full py-3 px-6 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-opacity"
+                  >
+                    Continue to dashboard
+                  </Link>
+                </SignedIn>
+              </div>
+            )}
+          </div>
+        )}
+
         {step === "signup-prompt" && (
           <div className="p-10 text-center">
             <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <span className="text-2xl">🔍</span>
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-3">
-              Ready to scan {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              Ready to scan {displayUrl}
             </h2>
             <p className="text-muted-foreground mb-6 leading-relaxed">
               This scan may take a while depending on site size. You&apos;ll see the full status and AI chatbot after signing up.
@@ -129,7 +365,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
               Scanning your site...
             </p>
             <p className="text-sm text-muted-foreground mb-4">
-              {SCAN_MESSAGES[scanMessageIndex]}
+              {["Reading your homepage...", "Looking at your services...", "Almost ready..."][scanMessageIndex]}
             </p>
             <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
               <div
@@ -149,7 +385,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
               We&apos;ve already scanned this site
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              We found a recent scan for {url.replace(/^https?:\/\//, "").replace(/\/$/, "")} with {pageCount} pages.
+              We found a recent scan for {displayUrl} with {pageCount} pages.
               {scannedAt && ` Scanned ${new Date(scannedAt).toLocaleDateString()}.`}
             </p>
             <div className="flex flex-col gap-3">
@@ -185,7 +421,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
         {step === "results" && (
           <div className="p-8">
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              Nice site! We found {pageCount} pages on {url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              Nice site! We found {pageCount} pages on {displayUrl}
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
               Choose what to include in your chatbot:
