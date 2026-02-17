@@ -49,6 +49,7 @@ const PLANS: Record<PlanSlug, { name: string; price: number; description: string
 };
 
 const CAL_LINK = process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/forwardslash/30min";
+const PAYPAL_ME_USER = "michael239";
 
 type AddOnId = "dns" | "ai-chatbot" | "logo" | "seo" | "blog";
 
@@ -119,6 +120,15 @@ function CheckoutContent() {
 
   const addOnsTotal = ADD_ONS.reduce((sum, a) => (addOns.has(a.id) ? sum + a.price : sum), 0);
   const subtotal = plan.price + addOnsTotal;
+
+  const addOnLabels = ADD_ONS.filter((a) => addOns.has(a.id)).map((a) => a.label);
+  const paypalDescription = addOnLabels.length > 0
+    ? `ForwardSlash.Chat - ${plan.name} + ${addOnLabels.join(", ")}`
+    : `ForwardSlash.Chat - ${plan.name}`;
+  const amount = subtotal.toFixed(2);
+  const paypalLink = `https://www.paypal.com/paypalme/${PAYPAL_ME_USER}/${amount}?item_name=${encodeURIComponent(paypalDescription)}`;
+
+  const canPay = subtotal > 0;
 
   return (
     <section className="py-12 md:py-16 px-6">
@@ -286,12 +296,39 @@ function CheckoutContent() {
                 Year 1 hosting included. One-time payment. No monthly fees.
               </p>
 
-              <Button
-                asChild
-                className="mt-6 w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white py-6 text-base"
-              >
-                <a href="#">Proceed to payment</a>
-              </Button>
+              {canPay ? (
+                <Button
+                  asChild
+                  className="mt-6 w-full rounded-full bg-[#0070ba] hover:bg-[#005ea6] text-white py-6 text-base"
+                  size="lg"
+                >
+                  <a
+                    href={paypalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <img
+                      src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-small.png"
+                      alt="PayPal"
+                      className="h-6 w-auto"
+                    />
+                    Pay with PayPal – ${subtotal.toLocaleString()} One-Time
+                  </a>
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  className="mt-6 w-full rounded-full py-6 text-base"
+                  size="lg"
+                >
+                  Select a plan to continue
+                </Button>
+              )}
+
+              <p className="text-sm text-muted-foreground mt-3 text-center">
+                After payment, email <a href="mailto:michael@forwardslash.chat" className="text-primary hover:underline">michael@forwardslash.chat</a> with your business name, website URL, and order details to start setup.
+              </p>
 
               <Link
                 href="/services"
