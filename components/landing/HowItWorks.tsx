@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FileText, Globe, Upload } from "lucide-react";
+import { LIMITS } from "@/lib/validation";
 import { Button } from "@/components/ui/button";
 import { FadeInSection } from "@/components/FadeInSection";
 
@@ -231,6 +232,9 @@ function ChatDemo() {
               <input
                 type="text"
                 placeholder="Ask anything"
+                maxLength={LIMITS.chatMessage}
+                readOnly
+                aria-hidden
                 className="w-full text-sm outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
               />
               <div className="flex items-center justify-between mt-2">

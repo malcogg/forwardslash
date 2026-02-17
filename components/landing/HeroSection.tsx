@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DashboardMockup } from "@/components/landing/DashboardMockup";
+import { LIMITS, sanitizeWebsiteUrl, isValidUrl } from "@/lib/validation";
 
 const SCAN_HISTORY_KEY = "forwardslash_scan_urls";
 const MAX_HISTORY = 5;
@@ -55,9 +56,14 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
   }, []);
 
   const handleScan = () => {
-    const url = inputRef.current?.value?.trim();
-    if (url) {
-      const normalized = url.startsWith("http") ? url : `https://${url}`;
+    const raw = inputRef.current?.value?.trim() ?? "";
+    if (!raw) {
+      inputRef.current?.focus();
+      return;
+    }
+    const url = sanitizeWebsiteUrl(raw);
+    const normalized = url.startsWith("http") ? url : `https://${url}`;
+    if (url && isValidUrl(normalized)) {
       addToScanHistory(normalized);
       setHistory(getScanHistory());
       onScanClick?.(normalized);
@@ -87,6 +93,8 @@ export function HeroSection({ onScanClick }: HeroSectionProps) {
                   type="url"
                   placeholder="Enter your website URL"
                   list="scan-history"
+                  maxLength={LIMITS.websiteUrl}
+                  autoComplete="url"
                   className="w-full px-5 py-3 rounded-full border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   onKeyDown={(e) => e.key === "Enter" && handleScan()}
                   onChange={(e) => setUrlHint(getNormalizedHint(e.target.value))}

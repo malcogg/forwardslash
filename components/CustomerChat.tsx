@@ -3,6 +3,7 @@
 import { useChat } from "ai/react";
 import { ArrowUp } from "lucide-react";
 import { useMemo } from "react";
+import { sanitizeChatMessage, LIMITS } from "@/lib/validation";
 
 interface CustomerChatProps {
   customerId: string;
@@ -32,7 +33,7 @@ export function CustomerChat({
   }, [messages.length]);
 
   const send = (text: string) => {
-    const t = text.trim();
+    const t = sanitizeChatMessage(text);
     if (!t || isLoading) return;
     append({ role: "user", content: t });
   };
@@ -72,9 +73,10 @@ export function CustomerChat({
               <div className="border border-gray-200 rounded-lg p-3 bg-white">
                 <input
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => setInput(e.target.value.slice(0, LIMITS.chatMessage))}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
                   placeholder="Ask anything"
+                  maxLength={LIMITS.chatMessage}
                   className="w-full text-sm outline-none bg-transparent text-gray-900 placeholder:text-gray-500"
                 />
                 <div className="flex items-center justify-between mt-2">
@@ -142,9 +144,10 @@ export function CustomerChat({
           <div className="flex gap-2 rounded-lg border border-gray-200 bg-white p-2">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value.slice(0, LIMITS.chatMessage))}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
               placeholder="Ask anything"
+              maxLength={LIMITS.chatMessage}
               className="flex-1 px-3 py-2 bg-transparent text-gray-900 placeholder:text-gray-500 focus:outline-none text-sm"
             />
             <button

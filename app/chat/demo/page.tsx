@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 import { ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { sanitizeChatMessage, LIMITS } from "@/lib/validation";
 
 const CAL_LINK = process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/forwardslash/30min";
 
@@ -225,7 +226,7 @@ export default function DemoChatPage() {
   }, [messages, isLoading]);
 
   const send = (text: string) => {
-    const t = text.trim();
+    const t = sanitizeChatMessage(text);
     if (!t || isLoading) return;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: t, id: `u-${Date.now()}` }]);
@@ -363,9 +364,10 @@ export default function DemoChatPage() {
           <div className="border border-border rounded-lg p-3 bg-muted/30 dark:bg-muted/10 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => setInput(e.target.value.slice(0, LIMITS.chatMessage))}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send(input)}
               placeholder="Ask anything"
+              maxLength={LIMITS.chatMessage}
               className="w-full text-sm outline-none bg-transparent placeholder:text-muted-foreground focus:outline-none"
             />
             <div className="flex items-center justify-between mt-2">

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { content, customers } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { sanitizeChatMessage } from "@/lib/validation";
 
 /**
  * POST /api/chat
@@ -23,7 +24,8 @@ export async function POST(request: Request) {
     }
 
     const lastUser = messages.filter((m) => m.role === "user").pop();
-    const query = lastUser?.content?.trim();
+    const rawQuery = lastUser?.content;
+    const query = typeof rawQuery === "string" ? sanitizeChatMessage(rawQuery) : "";
     if (!query) {
       return NextResponse.json({ error: "No message to answer" }, { status: 400 });
     }
@@ -53,13 +55,18 @@ ${context || "(No content yet - the chatbot is still being built.)"}`;
       return NextResponse.json({ error: "LLM not configured" }, { status: 503 });
     }
 
+    const safeMessages = messages.map((m) => {
+      const content = typeof m.content === "string" ? sanitizeChatMessage(m.content) : "";
+      return {
+        role: m.role as "user" | "assistant" | "system",
+        content,
+      };
+    });
+
     const result = streamText({
       model: openai("gpt-4o-mini"),
       system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      })),
+      messages: safeMessages,
     });
 
     return result.toDataStreamResponse();

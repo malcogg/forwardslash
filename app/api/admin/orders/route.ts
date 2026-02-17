@@ -4,6 +4,13 @@ import { orders, customers } from "@/db/schema";
 import { getOrCreateUser } from "@/lib/auth";
 import { auth } from "@clerk/nextjs/server";
 import { eq, desc } from "drizzle-orm";
+import {
+  sanitizeWebsiteUrl,
+  sanitizeBusinessName,
+  sanitizeDomain,
+  sanitizeSubdomain,
+  isValidUrl,
+} from "@/lib/validation";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
@@ -70,21 +77,35 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
-  const { websiteUrl, businessName, domain, subdomain } = body as {
-    websiteUrl?: string;
-    businessName?: string;
-    domain?: string;
-    subdomain?: string;
-  };
+  const { websiteUrl, businessName, domain, subdomain } = body as Record<string, unknown>;
 
-  if (!websiteUrl || !businessName || !domain) {
+  if (
+    typeof websiteUrl !== "string" ||
+    typeof businessName !== "string" ||
+    typeof domain !== "string"
+  ) {
     return NextResponse.json(
       { error: "Missing: websiteUrl, businessName, domain" },
       { status: 400 }
     );
   }
 
-  const url = websiteUrl.startsWith("http") ? websiteUrl : `https://${websiteUrl}`;
+  const safeWebsiteUrl = sanitizeWebsiteUrl(websiteUrl);
+  const safeBusinessName = sanitizeBusinessName(businessName);
+  const safeDomain = sanitizeDomain(domain);
+  const safeSubdomain = sanitizeSubdomain(typeof subdomain === "string" ? subdomain : "");
+
+  if (!safeWebsiteUrl || !isValidUrl(safeWebsiteUrl.startsWith("http") ? safeWebsiteUrl : `https://${safeWebsiteUrl}`)) {
+    return NextResponse.json({ error: "Invalid website URL" }, { status: 400 });
+  }
+  if (!safeBusinessName) {
+    return NextResponse.json({ error: "Business name required" }, { status: 400 });
+  }
+  if (!safeDomain) {
+    return NextResponse.json({ error: "Domain required" }, { status: 400 });
+  }
+
+  const url = safeWebsiteUrl.startsWith("http") ? safeWebsiteUrl : `https://${safeWebsiteUrl}`;
 
   try {
     const [order] = await db
@@ -109,9 +130,9 @@ export async function POST(request: Request) {
       .insert(customers)
       .values({
         orderId: order.id,
-        businessName,
-        domain,
-        subdomain: subdomain ?? "chat",
+        businessName: safeBusinessName,
+        domain: safeDomain,
+        subdomain: safeSubdomain,
         websiteUrl: url,
         prepaidUntil,
         status: "content_collection",

@@ -6,6 +6,21 @@ import Link from "next/link";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { Check } from "lucide-react";
+import {
+  LIMITS,
+  isValidEmail,
+  sanitizeFirstName,
+  sanitizePhone,
+  sanitizeBusinessName,
+  sanitizeDomain,
+  sanitizeWebsiteUrl,
+} from "@/lib/validation";
+
+function safeInitialUrl(param: string | null): string {
+  if (!param?.trim()) return "";
+  const raw = param.trim().startsWith("http") ? param.trim() : `https://${param.trim()}`;
+  return sanitizeWebsiteUrl(raw).slice(0, LIMITS.websiteUrl);
+}
 
 type PlanSlug = "starter" | "new-build" | "redesign" | "chatbot" | "chatbot-1y" | "chatbot-2y" | "chatbot-3y";
 
@@ -105,13 +120,16 @@ function CheckoutContent() {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [businessName, setBusinessName] = useState(searchParams.get("businessName") ?? "");
-  const [domain, setDomain] = useState(
-    searchParams.get("domain") ?? urlParam?.replace(/^https?:\/\//, "").replace(/\/$/, "") ?? ""
+  const [businessName, setBusinessName] = useState(
+    () => sanitizeBusinessName(searchParams.get("businessName") ?? "")
   );
-  const [websiteUrl, setWebsiteUrl] = useState(initialUrl);
+  const [domain, setDomain] = useState(
+    () => sanitizeDomain(searchParams.get("domain") ?? urlParam ?? "")
+  );
+  const [websiteUrl, setWebsiteUrl] = useState(() => safeInitialUrl(urlParam ?? searchParams.get("websiteUrl")));
   const [addOns, setAddOns] = useState<Set<AddOnId>>(new Set());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [emailTouched, setEmailTouched] = useState(false);
 
   const toggleAddOn = (id: AddOnId) => {
     const addOn = ADD_ONS.find((a) => a.id === id);
@@ -135,9 +153,11 @@ function CheckoutContent() {
   const amount = subtotal.toFixed(2);
   const paypalLink = `https://www.paypal.com/paypalme/${PAYPAL_ME_USER}/${amount}?item_name=${encodeURIComponent(paypalDescription)}`;
 
+  const emailValid = !email.trim() || isValidEmail(email);
   const detailsComplete =
     firstName.trim() &&
     email.trim() &&
+    emailValid &&
     phone.trim() &&
     businessName.trim() &&
     domain.trim() &&
@@ -153,12 +173,12 @@ function CheckoutContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: firstName.trim(),
-          email: email.trim(),
-          phone: phone.trim(),
-          businessName: businessName.trim(),
-          domain: domain.trim(),
-          websiteUrl: websiteUrl.trim(),
+          firstName: sanitizeFirstName(firstName),
+          email: email.trim().toLowerCase().slice(0, LIMITS.email),
+          phone: sanitizePhone(phone),
+          businessName: sanitizeBusinessName(businessName),
+          domain: sanitizeDomain(domain),
+          websiteUrl: sanitizeWebsiteUrl(websiteUrl),
           planSlug,
           addOns: Array.from(addOns),
           amountCents: Math.round(subtotal * 100),
@@ -216,8 +236,10 @@ function CheckoutContent() {
                 id="firstName"
                 type="text"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={(e) => setFirstName(sanitizeFirstName(e.target.value))}
                 placeholder="Michael"
+                maxLength={LIMITS.firstName}
+                autoComplete="given-name"
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>
@@ -229,10 +251,16 @@ function CheckoutContent() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value.slice(0, LIMITS.email))}
+                onBlur={() => setEmailTouched(true)}
                 placeholder="hello@yourbusiness.com"
+                maxLength={LIMITS.email}
+                autoComplete="email"
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
+              {emailTouched && email.trim() && !emailValid && (
+                <p className="mt-1 text-xs text-destructive">Enter a valid email address</p>
+              )}
             </div>
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-1">
@@ -242,8 +270,10 @@ function CheckoutContent() {
                 id="phone"
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(sanitizePhone(e.target.value))}
                 placeholder="(619) 555-0123"
+                maxLength={LIMITS.phone}
+                autoComplete="tel"
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>
@@ -255,8 +285,10 @@ function CheckoutContent() {
                 id="business"
                 type="text"
                 value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
+                onChange={(e) => setBusinessName(sanitizeBusinessName(e.target.value))}
                 placeholder="Acme Plumbing"
+                maxLength={LIMITS.businessName}
+                autoComplete="organization"
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>
@@ -268,8 +300,10 @@ function CheckoutContent() {
                 id="domain"
                 type="text"
                 value={domain}
-                onChange={(e) => setDomain(e.target.value)}
+                onChange={(e) => setDomain(sanitizeDomain(e.target.value))}
                 placeholder="yourbusiness.com"
+                maxLength={LIMITS.domain}
+                autoComplete="off"
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>
@@ -281,8 +315,10 @@ function CheckoutContent() {
                 id="website"
                 type="url"
                 value={websiteUrl}
-                onChange={(e) => setWebsiteUrl(e.target.value)}
+                onChange={(e) => setWebsiteUrl(e.target.value.slice(0, LIMITS.websiteUrl))}
                 placeholder="https://yourcurrentsite.com"
+                maxLength={LIMITS.websiteUrl}
+                autoComplete="url"
                 className="w-full px-4 py-2.5 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
               />
             </div>

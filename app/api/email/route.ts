@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { resend, FROM_EMAIL } from "@/lib/resend";
 import { OrderConfirmationEmail } from "@/components/emails/order-confirmation";
 import { WelcomeEmail } from "@/components/emails/welcome";
+import { PaymentReminderEmail } from "@/components/emails/payment-reminder";
+import {
+  isValidEmail,
+  sanitizeFirstName,
+  sanitizeBusinessName,
+  sanitizeGenericText,
+  LIMITS,
+} from "@/lib/validation";
 
 /**
  * POST /api/email
@@ -17,20 +25,39 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { type, to } = body as { type: string; to: string; [key: string]: unknown };
 
-    if (!to || typeof to !== "string") {
-      return NextResponse.json({ error: "`to` email is required" }, { status: 400 });
+    if (!to || typeof to !== "string" || !isValidEmail(to)) {
+      return NextResponse.json({ error: "Valid `to` email is required" }, { status: 400 });
     }
+
+    const safeTo = to.trim().toLowerCase().slice(0, LIMITS.email);
 
     if (type === "welcome") {
       const { firstName } = body;
+      const safeFirstName = typeof firstName === "string" ? sanitizeFirstName(firstName) : undefined;
       const { data, error } = await resend.emails.send({
         from: FROM_EMAIL,
-        to: [to],
+        to: [safeTo],
         subject: "Welcome to ForwardSlash.Chat",
-        react: WelcomeEmail({ firstName: typeof firstName === "string" ? firstName : undefined }),
+        react: WelcomeEmail({ firstName: safeFirstName }),
+      });
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      return NextResponse.json(data);
+    }
+
+    if (type === "payment-reminder") {
+      const { firstName } = body;
+      const safeFirstName = typeof firstName === "string" ? sanitizeFirstName(firstName) : undefined;
+      const { data, error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [safeTo],
+        subject: "Still want your AI chatbot?",
+        react: PaymentReminderEmail({ firstName: safeFirstName }),
       });
 
       if (error) {
@@ -41,23 +68,31 @@ export async function POST(request: Request) {
 
     if (type === "order-confirmation") {
       const { businessName, planName, total, websiteUrl, domain } = body;
-      if (!businessName || !planName || !total) {
+      if (
+        typeof businessName !== "string" ||
+        typeof planName !== "string" ||
+        total == null
+      ) {
         return NextResponse.json(
           { error: "order-confirmation requires businessName, planName, total" },
           { status: 400 }
         );
       }
 
+      const safeBusinessName = sanitizeBusinessName(businessName);
+      const safePlanName = sanitizeGenericText(planName, 100);
+      const safeTotal = String(total).slice(0, 50);
+
       const { data, error } = await resend.emails.send({
         from: FROM_EMAIL,
-        to: [to],
-        subject: `Order confirmed — ${planName}`,
+        to: [safeTo],
+        subject: `Order confirmed — ${safePlanName}`,
         react: OrderConfirmationEmail({
-          businessName,
-          planName,
-          total: String(total),
-          websiteUrl: websiteUrl ?? undefined,
-          domain: domain ?? undefined,
+          businessName: safeBusinessName,
+          planName: safePlanName,
+          total: safeTotal,
+          websiteUrl: typeof websiteUrl === "string" ? sanitizeGenericText(websiteUrl, LIMITS.websiteUrl) : undefined,
+          domain: typeof domain === "string" ? sanitizeGenericText(domain, LIMITS.domain) : undefined,
         }),
       });
 
