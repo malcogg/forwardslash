@@ -89,7 +89,6 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
     if (!open || !url) return;
     setStep("roasting");
     setRoastData(null);
-    setRoastError(null);
     setVisibleReasonIndex(0);
     setRoastLevelVisible(false);
     setRoastMessageIndex(0);
