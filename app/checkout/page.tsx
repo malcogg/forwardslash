@@ -297,18 +297,22 @@ function CheckoutContent() {
               </p>
 
               {canPay ? (
-                <a
-                  href={paypalLink}
-                  rel="noopener noreferrer"
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-[#0070ba] px-6 py-6 text-base font-medium text-white transition-colors hover:bg-[#005ea6] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <img
-                    src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-small.png"
-                    alt="PayPal"
-                    className="h-6 w-auto"
-                  />
-                  Pay with PayPal – ${subtotal.toLocaleString()} One-Time
-                </a>
+                <div className="mt-6">
+                  <a
+                    href={paypalLink}
+                    rel="noopener noreferrer"
+                    className="flex w-full items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-emerald-700 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    Pay with PayPal – ${subtotal.toLocaleString()} One-Time
+                  </a>
+                  <div className="mt-2 flex justify-center">
+                    <img
+                      src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-small.png"
+                      alt="PayPal"
+                      className="h-5 w-auto opacity-80"
+                    />
+                  </div>
+                </div>
               ) : (
                 <Button
                   disabled
