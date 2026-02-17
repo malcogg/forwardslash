@@ -346,7 +346,7 @@ export default function DemoChatPage() {
             />
             <div className="flex items-center justify-between mt-2">
               <Link
-                href="/checkout"
+                href="/checkout?plan=chatbot"
                 className="inline-flex px-3 py-1.5 rounded-lg text-xs font-medium bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 transition-colors"
               >
                 Purchase
