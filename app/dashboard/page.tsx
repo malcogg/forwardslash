@@ -8,6 +8,7 @@ import { UserButton, useUser } from "@clerk/nextjs";
 import { Globe, Check, ChevronDown, X, Monitor, Tablet, Smartphone, Copy, ExternalLink } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CustomerChat } from "@/components/CustomerChat";
+import { ScanModal } from "@/components/ScanModal";
 
 const ACCENT_COLORS = [
   "#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6", "#06b6d4",
@@ -64,6 +65,7 @@ function DashboardContent() {
 
   const [activePanel, setActivePanel] = useState<"design" | "domains">("design");
   const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
+  const [scanNewSiteModalOpen, setScanNewSiteModalOpen] = useState(false);
   const [upsellModalOpen, setUpsellModalOpen] = useState(false);
   const [dnsModalOpen, setDnsModalOpen] = useState(false);
   const [previewView, setPreviewView] = useState<"desktop" | "tablet" | "mobile">("desktop");
@@ -317,9 +319,16 @@ function DashboardContent() {
             {scanDropdownOpen && (
               <div className="absolute left-full top-0 ml-2 py-1 min-w-[200px] bg-card border border-border rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
                 {myOrders.length === 0 ? (
-                  <Link href="/" onClick={() => setScanDropdownOpen(false)} className="block px-3 py-2 text-sm text-foreground hover:bg-accent">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScanDropdownOpen(false);
+                      setScanNewSiteModalOpen(true);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent"
+                  >
                     Scan new site
-                  </Link>
+                  </button>
                 ) : (
                   <>
                     {myOrders.map(({ order: o, customer: c }) => (
@@ -334,9 +343,16 @@ function DashboardContent() {
                         {c?.websiteUrl?.replace(/^https?:\/\//, "").replace(/\/$/, "") ?? c?.businessName ?? "Order"}
                       </Link>
                     ))}
-                    <Link href="/" onClick={() => setScanDropdownOpen(false)} className="block px-3 py-2 text-sm text-primary hover:bg-accent border-t border-border mt-1 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScanDropdownOpen(false);
+                        setScanNewSiteModalOpen(true);
+                      }}
+                      className="block w-full text-left px-3 py-2 text-sm text-primary hover:bg-accent border-t border-border mt-1 pt-2"
+                    >
                       + Scan new site
-                    </Link>
+                    </button>
                   </>
                 )}
               </div>
@@ -662,6 +678,30 @@ function DashboardContent() {
           </div>
         </div>
       )}
+
+      {/* Scan new site modal - same roast flow as homepage, stays in dashboard */}
+      <ScanModal
+        open={scanNewSiteModalOpen}
+        onClose={() => setScanNewSiteModalOpen(false)}
+        url=""
+        origin="dashboard"
+        onAddToDashboard={async (urlToAdd) => {
+          try {
+            const res = await fetch("/api/scan-request", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url: urlToAdd }),
+              credentials: "include",
+            });
+            const json = await res.json();
+            if (res.ok && json.orderId) {
+              router.replace(`/dashboard?orderId=${encodeURIComponent(json.orderId)}`);
+            }
+          } catch {
+            /* ignore */
+          }
+        }}
+      />
 
       {/* DNS modal */}
       {dnsModalOpen && (

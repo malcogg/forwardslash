@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { sanitizeWebsiteUrl, isValidUrl, LIMITS } from "@/lib/validation";
 
 export const PENDING_SCAN_URL_KEY = "forwardslash_pending_scan_url";
 
 type ModalStep =
+  | "enter-url"
   | "roasting"
   | "roast-results"
   | "signup-prompt"
@@ -51,10 +53,16 @@ interface ScanModalProps {
   onClose: () => void;
   url: string;
   onScanComplete?: (url: string) => void;
+  /** When "dashboard", shows URL input when url is empty and "Add to my projects" CTA */
+  origin?: "homepage" | "dashboard";
+  /** Called when user clicks "Add to my projects" (dashboard only). Create project and redirect. */
+  onAddToDashboard?: (url: string) => void;
 }
 
-export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps) {
-  const [step, setStep] = useState<ModalStep>("roasting");
+export function ScanModal({ open, onClose, url, onScanComplete, origin = "homepage", onAddToDashboard }: ScanModalProps) {
+  const urlInputRef = useRef<HTMLInputElement>(null);
+  const [enteredUrl, setEnteredUrl] = useState("");
+  const [step, setStep] = useState<ModalStep>("enter-url");
   const [typingElapsedMs, setTypingElapsedMs] = useState(0);
   const [roastData, setRoastData] = useState<RoastData>(null);
   const [visibleReasonIndex, setVisibleReasonIndex] = useState(0);
@@ -69,38 +77,66 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
   const [scanId, setScanId] = useState<string | null>(null);
   const [scannedAt, setScannedAt] = useState<string | null>(null);
 
-  const displayUrl = url ? url.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
+  const effectiveUrl = url || enteredUrl;
+  const displayUrl = effectiveUrl ? effectiveUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
+  const needsUrlInput = origin === "dashboard" && !url;
 
   const handleContinueToScan = useCallback(() => {
-    if (!url) return;
+    if (!effectiveUrl) return;
     try {
-      sessionStorage.setItem(PENDING_SCAN_URL_KEY, url);
+      sessionStorage.setItem(PENDING_SCAN_URL_KEY, effectiveUrl);
     } catch {
       /* ignore */
     }
-  }, [url]);
+  }, [effectiveUrl]);
 
-  // When modal opens with URL → start roasting
-  useEffect(() => {
-    if (!open || !url) return;
+  const handleSubmitUrl = useCallback(() => {
+    const raw = urlInputRef.current?.value?.trim() ?? "";
+    if (!raw) {
+      urlInputRef.current?.focus();
+      return;
+    }
+    const sanitized = sanitizeWebsiteUrl(raw);
+    const normalized = sanitized.startsWith("http") ? sanitized : `https://${sanitized}`;
+    if (!isValidUrl(normalized)) {
+      urlInputRef.current?.focus();
+      return;
+    }
+    setEnteredUrl(normalized);
     setStep("roasting");
-    setRoastData(null);
-    setVisibleReasonIndex(0);
-    setRoastLevelVisible(false);
-    setTypingElapsedMs(0);
     setError(null);
-  }, [open, url]);
+  }, []);
+
+  // When modal opens: homepage with url → roasting; dashboard with empty url → enter-url; dashboard with url → roasting
+  useEffect(() => {
+    if (!open) return;
+    setError(null);
+    if (url) {
+      setEnteredUrl("");
+      setStep("roasting");
+      setRoastData(null);
+      setVisibleReasonIndex(0);
+      setRoastLevelVisible(false);
+      setTypingElapsedMs(0);
+    } else if (needsUrlInput) {
+      setStep("enter-url");
+      setEnteredUrl("");
+    }
+  }, [open, url, needsUrlInput]);
+
+  // When entering URL and clicking Scan, we already set step to roasting in handleSubmitUrl
+  // When step becomes roasting with enteredUrl, the roast effect will run
 
   // Roasting: typing ticker + call API
   useEffect(() => {
-    if (step !== "roasting" || !url) return;
+    if (step !== "roasting" || !effectiveUrl) return;
 
     const ticker = setInterval(() => {
       setTypingElapsedMs((m) => Math.min(m + 50, 15000)); // cap at 15s
     }, 50);
 
     const start = Date.now();
-    const normalized = url.startsWith("http") ? url : `https://${url}`;
+    const normalized = effectiveUrl.startsWith("http") ? effectiveUrl : `https://${effectiveUrl}`;
 
     fetch("/api/scan/roast", {
       method: "POST",
@@ -148,7 +184,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
       });
 
     return () => clearInterval(ticker);
-  }, [step, url, displayUrl]);
+  }, [step, effectiveUrl, displayUrl]);
 
   // Roast results: sequential bullet reveals
   useEffect(() => {
@@ -199,9 +235,45 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
           <X className="w-5 h-5" />
         </button>
 
-        {/* Roasting: pulsating orb + typing bubbles */}
+        {/* Enter URL (dashboard only, when no url provided) */}
         <AnimatePresence mode="wait">
-          {step === "roasting" && (
+          {step === "enter-url" && needsUrlInput && (
+            <motion.div
+              key="enter-url"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="p-8 sm:p-10"
+            >
+              <h2 className="text-xl font-semibold text-foreground mb-2">
+                Scan a new site
+              </h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                Enter a website URL and we&apos;ll peek at it — age, tech vibes, and page estimate. Same flow as the homepage.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  ref={urlInputRef}
+                  type="url"
+                  placeholder="https://example.com"
+                  maxLength={LIMITS.websiteUrl}
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmitUrl()}
+                  className="flex-1 px-4 py-3 rounded-xl border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                />
+                <button
+                  onClick={handleSubmitUrl}
+                  className="px-6 py-3 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors shrink-0"
+                >
+                  Scan
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-4">
+                We&apos;ll run a light scan (no Firecrawl credits) and show you a quick roast + price estimate.
+              </p>
+            </motion.div>
+          )}
+          {(step === "roasting" || (step === "enter-url" && url)) && (
             <motion.div
               key="roasting"
               initial={{ opacity: 1 }}
@@ -350,16 +422,27 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Add an AI chatbot to your site
                 </p>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                  {origin === "dashboard" && onAddToDashboard && (
+                    <button
+                      onClick={() => {
+                        onAddToDashboard(effectiveUrl);
+                        onClose();
+                      }}
+                      className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors order-first sm:order-first"
+                    >
+                      Add to my projects →
+                    </button>
+                  )}
                   <Link
-                    href={`/?pages=${roastData.estimatedPages ?? 25}${url ? `&url=${encodeURIComponent(url)}` : ""}#pricing`}
+                    href={`/?pages=${roastData.estimatedPages ?? 25}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}#pricing`}
                     onClick={handleContinueToScan}
                     className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-muted/60 border border-border hover:bg-muted/80 hover:border-muted-foreground/30 transition-colors"
                   >
                     {roastData.estimatedPages ? `See your price (~${roastData.estimatedPages} pages)` : "See pricing (default ~25 pages)"}
                   </Link>
                   <Link
-                    href={`/checkout?plan=chatbot-2y${roastData.estimatedPages ? `&pages=${roastData.estimatedPages}` : "&pages=25"}${url ? `&url=${encodeURIComponent(url)}` : ""}`}
+                    href={`/checkout?plan=chatbot-2y${roastData.estimatedPages ? `&pages=${roastData.estimatedPages}` : "&pages=25"}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}`}
                     onClick={handleContinueToScan}
                     className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
                   >
@@ -585,7 +668,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
                 const params = new URLSearchParams();
                 if (scanId) params.set("scanId", scanId);
                 params.set("pageCount", String(pageCount));
-                params.set("url", url);
+                params.set("url", effectiveUrl);
                 params.set("years", String(tier.years ?? 1));
                 params.set("dnsHelp", String(dnsHelp));
                 params.set("total", String(totalPrice));
