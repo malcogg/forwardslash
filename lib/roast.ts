@@ -8,6 +8,7 @@ export type RoastResult = {
   reasons: string[];
   roastLevel: string;
   roastEmoji: string;
+  estimatedPages?: number;
 };
 
 const ROAST_LEVELS: { min: number; level: string; emoji: string }[] = [
@@ -17,7 +18,39 @@ const ROAST_LEVELS: { min: number; level: string; emoji: string }[] = [
   { min: 0, level: "Looking pretty decent already – nice foundation!", emoji: "👍" },
 ];
 
-export function estimateSiteAgeTech(html: string): RoastResult {
+function estimatePageCount(html: string, baseUrl?: string): number {
+  const hrefMatches = html.matchAll(/href\s*=\s*["']([^"']+)["']/gi);
+  const links = new Set<string>();
+  let baseHost = "";
+  if (baseUrl) {
+    try {
+      baseHost = new URL(baseUrl).hostname.replace(/^www\./, "");
+    } catch {
+      /* ignore */
+    }
+  }
+  for (const m of hrefMatches) {
+    const href = (m[1] || "").trim();
+    if (!href || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:")) continue;
+    if (href.startsWith("/")) {
+      links.add(href.split("?")[0] || "/");
+    } else if (baseHost && (href.includes(baseHost) || href.startsWith("http"))) {
+      try {
+        const u = new URL(href, baseUrl);
+        if (u.hostname.replace(/^www\./, "") === baseHost) {
+          links.add(u.pathname.split("?")[0] || "/");
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  const count = links.size;
+  if (count <= 1) return 0;
+  return Math.min(count, 999);
+}
+
+export function estimateSiteAgeTech(html: string, url?: string): RoastResult {
   const signals: { ageScore: number; reasons: string[] } = {
     ageScore: 0,
     reasons: [],
@@ -41,11 +74,12 @@ export function estimateSiteAgeTech(html: string): RoastResult {
     signals.reasons.push("Wix/Weebly classic builder");
   }
 
-  // Old copyright years
-  const oldCopyright = html.match(/©\s*(19\d{2}|200\d)/);
+  // Old copyright years — format: "Copyright notice: © 2014 (last update vibes)"
+  const oldCopyright = html.match(/©\s*(19\d{2}|20[0-2]\d)/);
   if (oldCopyright) {
     signals.ageScore += 25;
-    signals.reasons.push(`Copyright ${oldCopyright[0]} – hasn't been updated in a while`);
+    const year = oldCopyright[1];
+    signals.reasons.push(`Copyright notice: © ${year} (last update vibes)`);
   }
 
   // No HTTPS signals in content
@@ -77,6 +111,12 @@ export function estimateSiteAgeTech(html: string): RoastResult {
     signals.reasons.push("Marquee or blink tags – peak 2002");
   }
 
+  // Page count estimate (from internal links) — add first so it leads
+  const estimatedPages = estimatePageCount(html, url);
+  if (estimatedPages > 0) {
+    signals.reasons.unshift(`Pages found: ~${estimatedPages}`);
+  }
+
   // Generic fallback if we found nothing
   if (signals.reasons.length === 0) {
     signals.reasons.push("Standard site setup");
@@ -88,5 +128,6 @@ export function estimateSiteAgeTech(html: string): RoastResult {
     reasons: signals.reasons,
     roastLevel: level.level,
     roastEmoji: level.emoji,
+    estimatedPages: estimatedPages || undefined,
   };
 }

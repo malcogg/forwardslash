@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = estimateSiteAgeTech(html);
+    const result = estimateSiteAgeTech(html, normalized);
     return NextResponse.json({
       ...result,
       url: normalized.replace(/^https?:\/\//, "").replace(/\/$/, ""),

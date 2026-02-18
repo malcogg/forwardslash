@@ -25,7 +25,7 @@ const TYPING_BUBBLES = [
   "Finding your classic vibes...",
   "Preparing your roast...",
 ];
-const TYPEWRITER_MS_PER_CHAR = 40;
+const TYPEWRITER_MS_PER_CHAR = 65;
 
 const PAGE_TIERS = [
   { min: 0, max: 300, tier: "Small", price: 550, years: 1 },
@@ -357,7 +357,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
                       key={href}
                       href={`${href}${href.includes("?") ? "&" : "?"}url=${encodeURIComponent(url)}`}
                       onClick={handleContinueToScan}
-                      className="py-2.5 px-3 text-center text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                      className="py-2.5 px-3 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-muted/60 border border-border hover:bg-muted/80 hover:border-muted-foreground/30 transition-colors"
                     >
                       {label}
                     </Link>
