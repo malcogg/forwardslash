@@ -34,13 +34,26 @@ function DashboardContent() {
   // Spec: After signup, user arrives with pending scan URL. Create project and redirect.
   useEffect(() => {
     try {
-      const pendingUrl = sessionStorage.getItem(PENDING_SCAN_URL_KEY);
-      if (!pendingUrl || orderId) return;
+      const raw = sessionStorage.getItem(PENDING_SCAN_URL_KEY);
+      if (!raw || orderId) return;
       sessionStorage.removeItem(PENDING_SCAN_URL_KEY);
+      let pendingUrl: string;
+      let pendingEstimatedPages: number | undefined;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.url === "string") {
+          pendingUrl = parsed.url;
+          pendingEstimatedPages = typeof parsed.estimatedPages === "number" ? parsed.estimatedPages : undefined;
+        } else {
+          pendingUrl = raw;
+        }
+      } catch {
+        pendingUrl = raw;
+      }
       fetch("/api/scan-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: pendingUrl }),
+        body: JSON.stringify({ url: pendingUrl, estimatedPages: pendingEstimatedPages }),
         credentials: "include",
       })
         .then(async (res) => {
@@ -51,7 +64,7 @@ function DashboardContent() {
           }
         })
         .catch(() => {
-          sessionStorage.setItem(PENDING_SCAN_URL_KEY, pendingUrl);
+          sessionStorage.setItem(PENDING_SCAN_URL_KEY, raw);
         });
     } catch {
       /* ignore */

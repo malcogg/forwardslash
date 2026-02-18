@@ -81,14 +81,15 @@ export function ScanModal({ open, onClose, url, onScanComplete, origin = "homepa
   const displayUrl = effectiveUrl ? effectiveUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
   const needsUrlInput = origin === "dashboard" && !url;
 
-  const handleContinueToScan = useCallback(() => {
+  const handleContinueToScan = useCallback((estimatedPagesOverride?: number) => {
     if (!effectiveUrl) return;
     try {
-      sessionStorage.setItem(PENDING_SCAN_URL_KEY, effectiveUrl);
+      const payload = { url: effectiveUrl, estimatedPages: estimatedPagesOverride ?? roastData?.estimatedPages };
+      sessionStorage.setItem(PENDING_SCAN_URL_KEY, JSON.stringify(payload));
     } catch {
       /* ignore */
     }
-  }, [effectiveUrl]);
+  }, [effectiveUrl, roastData?.estimatedPages]);
 
   const handleSubmitUrl = useCallback(() => {
     const raw = urlInputRef.current?.value?.trim() ?? "";
