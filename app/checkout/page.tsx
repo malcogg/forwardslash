@@ -15,6 +15,7 @@ import {
   sanitizeDomain,
   sanitizeWebsiteUrl,
 } from "@/lib/validation";
+import { getPriceFromPagesAndYears } from "@/lib/pricing";
 
 function safeInitialUrl(param: string | null): string {
   if (!param?.trim()) return "";
@@ -112,7 +113,17 @@ const ADD_ONS: {
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const planSlug = (searchParams.get("plan") ?? "starter") as PlanSlug;
-  const plan = PLANS[planSlug] ?? PLANS.starter;
+  const basePlan = PLANS[planSlug] ?? PLANS.starter;
+  const pagesParam = searchParams.get("pages");
+  const pages = pagesParam ? Math.min(499, Math.max(1, parseInt(pagesParam, 10) || 25)) : null;
+  const isChatbotPlan = planSlug === "chatbot-1y" || planSlug === "chatbot-2y";
+  const years = planSlug === "chatbot-2y" ? 2 : 1;
+  const dynamicPrice = isChatbotPlan && pages != null ? getPriceFromPagesAndYears(pages, years as 1 | 2) : null;
+  const plan = {
+    ...basePlan,
+    price: dynamicPrice ?? basePlan.price,
+    name: dynamicPrice != null ? `AI Chatbot (${years}-year, ~${pages} pages)` : basePlan.name,
+  };
 
   const urlParam = searchParams.get("url") ?? searchParams.get("websiteUrl");
   const initialUrl = urlParam ? (urlParam.startsWith("http") ? urlParam : `https://${urlParam}`) : "";
@@ -204,23 +215,34 @@ function CheckoutContent() {
         <div className="mb-10">
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Select your plan</h2>
           <div className="flex flex-wrap gap-2">
-            {(["starter", "new-build", "redesign", "chatbot", "chatbot-1y", "chatbot-2y", "chatbot-3y"] as PlanSlug[]).map(
-              (slug) => {
-                const p = PLANS[slug];
-                const active = planSlug === slug;
-                return (
-                  <Link
-                    key={slug}
-                    href={`/checkout?plan=${slug}`}
-                    className={`inline-flex px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      active ? "bg-emerald-600 text-white" : "bg-muted hover:bg-muted/80 text-foreground"
-                    }`}
-                  >
-                    {p.name} — ${p.price}
-                  </Link>
-                );
-              }
-            )}
+            {(["starter", "new-build", "redesign", "chatbot-1y", "chatbot-2y"] as PlanSlug[]).map((slug) => {
+              const p = PLANS[slug];
+              const active = planSlug === slug;
+              const isChatbot = slug === "chatbot-1y" || slug === "chatbot-2y";
+              const effectivePages = isChatbot ? (pages ?? 25) : null;
+              const buildHref = () => {
+                const params = new URLSearchParams();
+                params.set("plan", slug);
+                if (effectivePages != null) params.set("pages", String(effectivePages));
+                if (urlParam) params.set("url", urlParam);
+                return `/checkout?${params.toString()}`;
+              };
+              const displayPrice =
+                isChatbot && effectivePages != null
+                  ? getPriceFromPagesAndYears(effectivePages, slug === "chatbot-2y" ? 2 : 1)
+                  : null;
+              return (
+                <Link
+                  key={slug}
+                  href={buildHref()}
+                  className={`inline-flex px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    active ? "bg-emerald-600 text-white" : "bg-muted hover:bg-muted/80 text-foreground"
+                  }`}
+                >
+                  {p.name} — ${displayPrice ?? p.price}
+                </Link>
+              );
+            })}
           </div>
         </div>
 

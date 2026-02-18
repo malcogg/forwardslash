@@ -39,8 +39,9 @@ function getHardcodedResponse(message: string): ResponseResult | null {
       keywords: ["how much", "pricing", "cost", "plans", "price", "how much is it"],
       answer: `Simple one-time pricing — year 1 hosting included, no monthly fees ever.
 After year 1: move to your own host (free) or renew hosting with us for $200/year (optional).
-Tap a plan below to go straight to checkout — full details on [our services page](/services).`,
+AI chatbot: from $550 (1yr) or $850 (2yr) — price scales with site size. Tap below.`,
       pills: [
+        { label: "AI Chatbot — See price", href: "/?pages=25#pricing" },
         { label: "Quick $350 Starter", href: "/checkout?plan=starter" },
         { label: "$1,000 New Build", href: "/checkout?plan=new-build" },
         { label: "$2,000 Redesign", href: "/checkout?plan=redesign" },
@@ -249,7 +250,7 @@ export default function DemoChatPage() {
     <div className="flex flex-col h-dvh bg-background">
       <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2 text-center text-sm text-foreground">
         This is a demo chatbot.{" "}
-        <Link href="/checkout?plan=chatbot" className="font-medium text-emerald-600 hover:underline">Get your own at forwardslash.chat</Link>
+        <Link href="/checkout?plan=chatbot-2y&pages=25" className="font-medium text-emerald-600 hover:underline">Get your own at forwardslash.chat</Link>
       </div>
       <header className="flex items-center justify-between px-4 py-3 border-b shrink-0">
         <div className="flex items-center gap-2">
@@ -372,7 +373,7 @@ export default function DemoChatPage() {
             />
             <div className="flex items-center justify-between mt-2">
               <Link
-                href="/checkout?plan=chatbot"
+                href="/checkout?plan=chatbot-2y&pages=25"
                 className="inline-flex px-3 py-1.5 rounded-lg text-xs font-medium bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 transition-colors"
               >
                 Purchase

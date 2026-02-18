@@ -40,15 +40,11 @@ type RoastData = {
   roastLevel: string;
   roastEmoji: string;
   url: string;
+  estimatedPages?: number;
 } | null;
 
 const MIN_ROAST_DISPLAY_MS = 2500;
 const BULLET_DELAY_MS = 400;
-const ROAST_PLAN_LINKS = [
-  { label: "Quick $350 Starter", href: "/checkout?plan=starter" },
-  { label: "Full $1k Build", href: "/checkout?plan=new-build" },
-  { label: "Redesign $2k", href: "/checkout?plan=redesign" },
-];
 
 interface ScanModalProps {
   open: boolean;
@@ -118,13 +114,14 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
 
         setTimeout(() => {
           if (data.fallback || data.error) {
-            setRoastData({
-              ageScore: 0,
-              reasons: ["Standard site setup"],
-              roastLevel: "We couldn't peek at your site this time — no worries!",
-              roastEmoji: "👋",
-              url: displayUrl,
-            });
+        setRoastData({
+          ageScore: 0,
+          reasons: ["Standard site setup"],
+          roastLevel: "We couldn't peek at your site this time — no worries!",
+          roastEmoji: "👋",
+          url: displayUrl,
+          estimatedPages: undefined,
+        });
           } else {
             setRoastData({
               ageScore: data.ageScore ?? 0,
@@ -132,6 +129,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
               roastLevel: data.roastLevel ?? "Looking good!",
               roastEmoji: data.roastEmoji ?? "👍",
               url: data.url ?? displayUrl,
+              estimatedPages: typeof data.estimatedPages === "number" ? data.estimatedPages : undefined,
             });
           }
           setStep("roast-results");
@@ -144,6 +142,7 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
           roastLevel: "We couldn't peek this time — sign up for a full scan!",
           roastEmoji: "👋",
           url: displayUrl,
+          estimatedPages: undefined,
         });
         setStep("roast-results");
       });
@@ -351,17 +350,21 @@ export function ScanModal({ open, onClose, url, onScanComplete }: ScanModalProps
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Add an AI chatbot to your site
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {ROAST_PLAN_LINKS.map(({ label, href }) => (
-                    <Link
-                      key={href}
-                      href={`${href}${href.includes("?") ? "&" : "?"}url=${encodeURIComponent(url)}`}
-                      onClick={handleContinueToScan}
-                      className="py-2.5 px-3 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-muted/60 border border-border hover:bg-muted/80 hover:border-muted-foreground/30 transition-colors"
-                    >
-                      {label}
-                    </Link>
-                  ))}
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Link
+                    href={`/?pages=${roastData.estimatedPages ?? 25}${url ? `&url=${encodeURIComponent(url)}` : ""}#pricing`}
+                    onClick={handleContinueToScan}
+                    className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-muted/60 border border-border hover:bg-muted/80 hover:border-muted-foreground/30 transition-colors"
+                  >
+                    {roastData.estimatedPages ? `See your price (~${roastData.estimatedPages} pages)` : "See pricing (default ~25 pages)"}
+                  </Link>
+                  <Link
+                    href={`/checkout?plan=chatbot-2y${roastData.estimatedPages ? `&pages=${roastData.estimatedPages}` : "&pages=25"}${url ? `&url=${encodeURIComponent(url)}` : ""}`}
+                    onClick={handleContinueToScan}
+                    className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                  >
+                    Get started →
+                  </Link>
                 </div>
               </motion.div>
             )}

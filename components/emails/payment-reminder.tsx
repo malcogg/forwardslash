@@ -4,7 +4,7 @@ interface PaymentReminderProps {
   firstName?: string;
 }
 
-const CHECKOUT_URL = "https://forwardslash.chat/checkout?plan=chatbot";
+const CHECKOUT_URL = "https://forwardslash.chat/checkout?plan=chatbot-2y&pages=25";
 
 export function PaymentReminderEmail({ firstName }: PaymentReminderProps) {
   return (

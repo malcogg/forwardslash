@@ -190,21 +190,18 @@ function PaymentsCard() {
         </div>
 
         <div className="space-y-3">
-          <Link href="/checkout?plan=chatbot-1y" className="flex items-center justify-between py-2 border-b border-border hover:bg-accent/50 -mx-2 px-2 rounded">
-            <span className="text-sm text-foreground">1-Year Starter</span>
-            <span className="text-sm font-medium text-foreground">$550</span>
+          <Link href="/checkout?plan=chatbot-1y&pages=25" className="flex items-center justify-between py-2 border-b border-border hover:bg-accent/50 -mx-2 px-2 rounded">
+            <span className="text-sm text-foreground">1-Year</span>
+            <span className="text-sm font-medium text-foreground">from $550</span>
           </Link>
-          <Link href="/checkout?plan=chatbot-2y" className="flex items-center justify-between py-2 border-b border-border hover:bg-accent/50 -mx-2 px-2 rounded">
-            <span className="text-sm text-foreground">2-Year Bundle</span>
-            <span className="text-sm font-medium text-foreground">$850</span>
-          </Link>
-          <Link href="/checkout?plan=chatbot-3y" className="flex items-center justify-between py-2 hover:bg-accent/50 -mx-2 px-2 rounded">
-            <span className="text-sm text-foreground">3-Year Bundle</span>
-            <span className="text-sm font-medium text-foreground">$1,250</span>
+          <Link href="/checkout?plan=chatbot-2y&pages=25" className="flex items-center justify-between py-2 hover:bg-accent/50 -mx-2 px-2 rounded">
+            <span className="text-sm text-foreground">2-Year</span>
+            <span className="text-sm font-medium text-foreground">from $850</span>
           </Link>
         </div>
-
-        <p className="mt-4 text-xs text-muted-foreground">Hosting included • No monthly fees</p>
+        <p className="mt-4 text-xs text-muted-foreground">
+          Price scales with site size. <Link href="/?pages=25#pricing" className="text-emerald-600 hover:underline">See pricing</Link>. Hosting included • No monthly fees
+        </p>
     </div>
   );
 }

@@ -145,7 +145,7 @@ function DashboardContent() {
     // No crawl before payment: redirect unpaid users to checkout
     if (data.order?.status !== "paid") {
       router.push(
-        `/checkout?plan=chatbot&url=${encodeURIComponent(data.customer?.websiteUrl ?? "")}&orderId=${encodeURIComponent(data.order?.id ?? "")}`
+        `/checkout?plan=chatbot-2y&pages=25&url=${encodeURIComponent(data.customer?.websiteUrl ?? "")}&orderId=${encodeURIComponent(data.order?.id ?? "")}`
       );
       return;
     }
@@ -394,7 +394,7 @@ function DashboardContent() {
                   <p className="text-sm font-medium text-foreground mb-1">Scraping complete! We have {contentCount} pages of data ready.</p>
                   <p className="text-sm text-muted-foreground mb-3">Payment unlocks full training of your custom AI chatbot. We use your scraped data to fine-tune and deploy a ready-to-use chatbot at chat.yourdomain.com.</p>
                   <Link
-                    href={`/checkout?plan=chatbot&url=${encodeURIComponent(customer?.websiteUrl ?? "")}&orderId=${encodeURIComponent(order?.id ?? "")}`}
+                    href={`/checkout?plan=chatbot-2y&pages=25&url=${encodeURIComponent(customer?.websiteUrl ?? "")}&orderId=${encodeURIComponent(order?.id ?? "")}`}
                     className="inline-block px-4 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-opacity"
                   >
                     Pay to unlock training →
@@ -426,7 +426,7 @@ function DashboardContent() {
                   <Link href="/" className="block w-full px-3 py-2 text-sm text-center border border-border rounded hover:bg-muted">
                     Scan your site
                   </Link>
-                  <Link href="/checkout?plan=chatbot" className="block w-full px-3 py-2 text-sm text-center bg-primary text-primary-foreground rounded hover:opacity-90">
+                  <Link href="/checkout?plan=chatbot-2y&pages=25" className="block w-full px-3 py-2 text-sm text-center bg-primary text-primary-foreground rounded hover:opacity-90">
                     Get started →
                   </Link>
                   <p className="text-xs text-muted-foreground">
@@ -559,7 +559,7 @@ function DashboardContent() {
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  Complete checkout to set up your domain. <Link href="/checkout?plan=chatbot" className="text-primary hover:underline">Go to checkout</Link>
+                  Complete checkout to set up your domain. <Link href="/checkout?plan=chatbot-2y&pages=25" className="text-primary hover:underline">Go to checkout</Link>
                 </p>
               )}
             </>
@@ -621,7 +621,7 @@ function DashboardContent() {
               <p className="text-sm text-muted-foreground text-center mb-6">
                 Complete checkout to preview your chatbot.
               </p>
-              <Link href="/checkout?plan=chatbot" className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:opacity-90">
+              <Link href="/checkout?plan=chatbot-2y&pages=25" className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:opacity-90">
                 Go to checkout
               </Link>
             </div>
