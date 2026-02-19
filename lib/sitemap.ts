@@ -13,10 +13,15 @@ const SITEMAP_PATHS = [
 ];
 
 const FETCH_TIMEOUT_MS = 8_000;
+const DELAY_BETWEEN_REQUESTS_MS = 250; // Polite crawler — avoid hammering small sites
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const MAX_CHILD_SITEMAPS = 5;
 const MAX_URLS = 5000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 function parseLocUrls(xml: string): string[] {
   const urls: string[] = [];
@@ -71,7 +76,18 @@ export async function getPageCountFromSitemap(baseUrl: string): Promise<number |
   const urls = new Set<string>();
   const sitemapUrlsToTry: string[] = [];
 
+  let lastFetchAt = 0;
+  const throttle = async () => {
+    const now = Date.now();
+    const elapsed = now - lastFetchAt;
+    if (elapsed < DELAY_BETWEEN_REQUESTS_MS && lastFetchAt > 0) {
+      await sleep(DELAY_BETWEEN_REQUESTS_MS - elapsed);
+    }
+    lastFetchAt = Date.now();
+  };
+
   // Check robots.txt for Sitemap: directive
+  await throttle();
   const robotsTxt = await fetchWithTimeout(`${baseOrigin}/robots.txt`);
   if (robotsTxt) {
     const sitemapMatch = robotsTxt.match(/Sitemap:\s*(\S+)/gi);
@@ -89,6 +105,7 @@ export async function getPageCountFromSitemap(baseUrl: string): Promise<number |
   }
 
   for (const sitemapUrl of sitemapUrlsToTry) {
+    await throttle();
     const xml = await fetchWithTimeout(sitemapUrl);
     if (!xml || xml.length < 50) continue;
 
@@ -97,6 +114,7 @@ export async function getPageCountFromSitemap(baseUrl: string): Promise<number |
     if (isIndex) {
       const childUrls = parseSitemapIndexLoc(xml);
       for (let i = 0; i < Math.min(childUrls.length, MAX_CHILD_SITEMAPS); i++) {
+        await throttle();
         const childXml = await fetchWithTimeout(childUrls[i]);
         if (childXml) {
           const locs = parseLocUrls(childXml);

@@ -4,6 +4,7 @@ import { getPageCountFromSitemap } from "@/lib/sitemap";
 import { sanitizeWebsiteUrl, isValidUrl } from "@/lib/validation";
 
 const FETCH_TIMEOUT_MS = 12_000;
+const DELAY_BETWEEN_HOMEPAGE_AND_SITEMAP_MS = 200; // Polite — avoid back-to-back hits on small sites
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
@@ -56,6 +57,9 @@ export async function POST(request: Request) {
 
     const result = estimateSiteAgeTech(html, normalized);
     const linkBasedPages = result.estimatedPages ?? 0;
+
+    // Brief pause before sitemap — polite crawler, avoid hammering small sites
+    await new Promise((r) => setTimeout(r, DELAY_BETWEEN_HOMEPAGE_AND_SITEMAP_MS));
 
     // Full sitemap scan for accurate pricing — we charge for pages the bot will call
     const sitemapPages = await getPageCountFromSitemap(normalized);
