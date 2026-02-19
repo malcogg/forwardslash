@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { estimateSiteAgeTech } from "@/lib/roast";
+import { getPageCountFromSitemap } from "@/lib/sitemap";
 import { sanitizeWebsiteUrl, isValidUrl } from "@/lib/validation";
 
 const FETCH_TIMEOUT_MS = 12_000;
@@ -54,8 +55,28 @@ export async function POST(request: Request) {
     }
 
     const result = estimateSiteAgeTech(html, normalized);
+    const linkBasedPages = result.estimatedPages ?? 0;
+
+    // Full sitemap scan for accurate pricing — we charge for pages the bot will call
+    const sitemapPages = await getPageCountFromSitemap(normalized);
+    const estimatedPages =
+      sitemapPages != null && sitemapPages > linkBasedPages
+        ? sitemapPages
+        : linkBasedPages || undefined;
+
+    // Update reasons if we used sitemap (more comprehensive)
+    let reasons = result.reasons;
+    if (sitemapPages != null && sitemapPages > linkBasedPages) {
+      reasons = [
+        `Pages found: ~${sitemapPages} (sitemap scan)`,
+        ...result.reasons.filter((r) => !r.startsWith("Pages found:")),
+      ];
+    }
+
     return NextResponse.json({
       ...result,
+      reasons,
+      estimatedPages: estimatedPages || result.estimatedPages,
       url: normalized.replace(/^https?:\/\//, "").replace(/\/$/, ""),
     });
   } catch (e) {

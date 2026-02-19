@@ -20,7 +20,8 @@ function isAdmin(email: string | undefined): boolean {
 
 async function runFirecrawlCrawl(
   apiKey: string,
-  url: string
+  url: string,
+  limit = 50
 ): Promise<{
   success: boolean;
   data?: { markdown?: string; metadata?: { sourceURL?: string; title?: string } }[];
@@ -32,7 +33,7 @@ async function runFirecrawlCrawl(
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ url, limit: 50 }),
+    body: JSON.stringify({ url, limit }),
   });
 
   const startJson = (await start.json()) as { success?: boolean; id?: string; error?: string };
@@ -134,14 +135,15 @@ export async function POST(
 
   // Credit check: skip for paid orders and admins (paid customers get crawl as part of their purchase)
   const skipCredits = adminBypass || order.status === "paid";
+  // Use purchased/estimated pages — we charge for what the bot will crawl (cap 500)
+  const crawlLimit = Math.min(Math.max(customer.estimatedPages ?? 50, 1), 500);
   if (!skipCredits) {
-    const CRAWL_LIMIT = 50;
-    const creditsNeeded = CRAWL_LIMIT;
+    const creditsNeeded = crawlLimit;
     const balance = await getCreditBalance(user.userId);
     if (balance.remaining < creditsNeeded) {
       return NextResponse.json(
         {
-          error: `Insufficient credits. Need ${creditsNeeded}, have ${balance.remaining}. Limit: ${balance.creditsLimit} (crawl uses ~${CRAWL_LIMIT} credits)`,
+          error: `Insufficient credits. Need ${creditsNeeded}, have ${balance.remaining}. Limit: ${balance.creditsLimit} (crawl uses ~${crawlLimit} credits)`,
         },
         { status: 402 }
       );
@@ -152,7 +154,7 @@ export async function POST(
     ? customer.websiteUrl
     : `https://${customer.websiteUrl}`;
 
-  const result = await runFirecrawlCrawl(apiKey, url);
+  const result = await runFirecrawlCrawl(apiKey, url, crawlLimit);
   if (!result.success || !result.data) {
     return NextResponse.json({ error: result.error ?? "Crawl failed" }, { status: 500 });
   }
