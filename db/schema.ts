@@ -27,6 +27,14 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Track reminder emails sent (payment_reminder_1, payment_reminder_2, payment_reminder_3)
+export const reminderSent = pgTable("reminder_sent", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  reminderType: text("reminder_type").notNull(),
+  sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Per-user Firecrawl credit usage
 export const creditUsage = pgTable("credit_usage", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -9,7 +9,7 @@
 | Trigger | Subject | Status |
 |---------|---------|--------|
 | Clerk `user.created` | Welcome to ForwardSlash.Chat | ✅ |
-| Cron: users 2+ days, no paid order | Still want your AI chatbot? | ✅ |
+| Cron: payment reminder sequence (day 2, 7, 14) | See below | ✅ |
 | Crawl completes | Your chatbot content is ready | ✅ Auto |
 | Crawl completes | Add this CNAME to go live | ✅ Auto |
 | Cron: checkout visit 4–24h ago, no paid order | Finish your AI chatbot order | ✅ Auto |
@@ -59,6 +59,20 @@
   "chatUrl": "https://chat.example.com"
 }
 ```
+
+---
+
+## Payment reminder sequence (sign up, no pay)
+
+3-email automation for users who sign up but never pay. Run migration `007-reminder-sent.sql`.
+
+| Step | When | Subject |
+|------|------|---------|
+| 1 | Day 2 | Still want your AI chatbot? |
+| 2 | Day 7 | Your AI chatbot is still waiting |
+| 3 | Day 14 | Last chance to get started |
+
+Each step only sends if the previous step was sent. No duplicate emails.
 
 ---
 
