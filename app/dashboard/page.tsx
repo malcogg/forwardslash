@@ -32,10 +32,12 @@ function DashboardContent() {
   const displayName = getDisplayName(user);
 
   // Spec: After signup, user arrives with pending scan URL. Create project and redirect.
+  // Only run after Clerk has loaded so the session cookie is available (avoids 401 on scan-request).
   useEffect(() => {
+    if (!clerkLoaded || orderId) return;
     try {
       const raw = sessionStorage.getItem(PENDING_SCAN_URL_KEY);
-      if (!raw || orderId) return;
+      if (!raw) return;
       sessionStorage.removeItem(PENDING_SCAN_URL_KEY);
       let pendingUrl: string;
       let pendingEstimatedPages: number | undefined;
@@ -69,7 +71,7 @@ function DashboardContent() {
     } catch {
       /* ignore */
     }
-  }, [orderId, router]);
+  }, [orderId, router, clerkLoaded]);
   const initials = getInitials(displayName);
 
   const [activePanel, setActivePanel] = useState<"design" | "domains">("design");
@@ -152,14 +154,21 @@ function DashboardContent() {
     };
     setLoading(true);
     setError(null);
-    // Short delay so the first request has the session cookie attached (avoids 401 flicker)
-    const t = setTimeout(() => { if (mounted) load(); }, 200);
+    // Delay so the first request has the session cookie attached after redirect (avoids 401)
+    const t = setTimeout(() => { if (mounted) load(); }, 400);
     return () => { clearTimeout(t); mounted = false; };
   }, [orderId, clerkLoaded]);
 
   useEffect(() => {
     if (!clerkLoaded) return;
-    fetch("/api/orders/me", { credentials: "include" }).then((res) => (res.ok ? res.json() : [])).then(setMyOrders).catch(() => {});
+    // Delay slightly so session is ready (avoids 401 when dashboard/scan-request also fire)
+    const t = setTimeout(() => {
+      fetch("/api/orders/me", { credentials: "include" })
+        .then((res) => (res.ok ? res.json() : []))
+        .then(setMyOrders)
+        .catch(() => {});
+    }, 500);
+    return () => clearTimeout(t);
   }, [clerkLoaded]);
 
   // Poll when current order is pending so user sees status = 'paid' soon after you set it in Neon
