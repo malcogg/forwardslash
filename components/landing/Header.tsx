@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, useUser, useClerk } from "@clerk/nextjs";
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X, Bell } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 function getInitials(user: { firstName?: string | null; lastName?: string | null; fullName?: string | null } | null | undefined) {
@@ -103,8 +103,28 @@ const desktopNavLinks = [
   { href: "/chat/demo", label: "Demo" },
 ];
 
-export function Header() {
+type LastScan = { url: string; displayUrl: string };
+
+export function Header({
+  lastScan = null,
+  onOpenLastScan,
+}: {
+  lastScan?: LastScan | null;
+  onOpenLastScan?: (url: string) => void;
+} = {}) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
+    }
+    if (bellOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [bellOpen]);
 
   useEffect(() => {
     if (mobileDrawerOpen) {
@@ -141,6 +161,38 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-3 shrink-0">
+            {lastScan && onOpenLastScan && (
+              <div className="relative" ref={bellRef}>
+                <button
+                  onClick={() => setBellOpen((o) => !o)}
+                  className="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent text-foreground"
+                  aria-label="Your last scan"
+                  type="button"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-medium text-white">
+                    1
+                  </span>
+                </button>
+                {bellOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 py-1 backdrop-blur-xl bg-background/95 dark:bg-background/95 border border-border/60 rounded-lg shadow-xl z-[100]">
+                    <p className="px-3 py-2 text-xs text-muted-foreground border-b border-border/60">
+                      Your last scan
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOpenLastScan(lastScan.url);
+                        setBellOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-foreground hover:bg-accent hover:text-accent-foreground text-left"
+                    >
+                      <span className="truncate">{lastScan.displayUrl}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             <ThemeToggle />
             <SignedOut>
               <Link href="/sign-in" className="hidden md:inline-block">

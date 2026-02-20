@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { CustomerChat } from "@/components/CustomerChat";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Zap } from "lucide-react";
 
 export default function CustomerChatPage() {
   const params = useParams();
@@ -51,13 +52,24 @@ export default function CustomerChatPage() {
           ForwardSlash.Chat
         </Link>
       </header>
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden relative">
         <CustomerChat
           customerId={customerId}
           businessName={customer.businessName}
           primaryColor={customer.primaryColor ?? "#6B4E3D"}
           compact={false}
         />
+        {/* Shirt-tag style: full bleed, tucked in corner, black bg, white text */}
+        <a
+          href="https://forwardslash.chat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-0 right-0 flex items-center gap-1.5 bg-black text-white px-3 py-1.5 text-xs font-medium -rotate-3 origin-bottom-right hover:bg-gray-900 hover:text-white shadow-sm"
+          style={{ borderTopLeftRadius: 4 }}
+        >
+          <Zap className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} />
+          <span>ForwardSlash</span>
+        </a>
       </div>
     </div>
   );

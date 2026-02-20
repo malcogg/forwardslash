@@ -7,8 +7,21 @@ import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { sanitizeWebsiteUrl, isValidUrl, LIMITS } from "@/lib/validation";
+import { getPriceFromPagesAndYears } from "@/lib/pricing";
 
 export const PENDING_SCAN_URL_KEY = "forwardslash_pending_scan_url";
+export const LAST_SCAN_KEY = "forwardslash_last_scan";
+
+function saveLastScan(url: string, estimatedPages: number, displayUrl: string) {
+  try {
+    localStorage.setItem(
+      LAST_SCAN_KEY,
+      JSON.stringify({ url, estimatedPages, displayUrl, savedAt: Date.now() })
+    );
+  } catch {
+    /* ignore */
+  }
+}
 
 type ModalStep =
   | "enter-url"
@@ -80,6 +93,13 @@ export function ScanModal({ open, onClose, url, onScanComplete, origin = "homepa
   const effectiveUrl = url || enteredUrl;
   const displayUrl = effectiveUrl ? effectiveUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
   const needsUrlInput = origin === "dashboard" && !url;
+
+  // Save last scan when roast results are shown (for bell icon on homepage)
+  useEffect(() => {
+    if (origin !== "homepage" || step !== "roast-results" || !roastData || !effectiveUrl) return;
+    const pages = roastData.estimatedPages ?? 25;
+    saveLastScan(effectiveUrl, pages, displayUrl);
+  }, [origin, step, roastData, effectiveUrl, displayUrl]);
 
   const handleContinueToScan = useCallback((estimatedPagesOverride?: number) => {
     if (!effectiveUrl) return;
@@ -435,20 +455,25 @@ export function ScanModal({ open, onClose, url, onScanComplete, origin = "homepa
                       Add to my projects →
                     </button>
                   )}
-                  <Link
-                    href={`/?pages=${roastData.estimatedPages ?? 25}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}#pricing`}
-                    onClick={() => handleContinueToScan()}
-                    className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-muted/60 border border-border hover:bg-muted/80 hover:border-muted-foreground/30 transition-colors"
-                  >
-                    {roastData.estimatedPages ? `See your price (~${roastData.estimatedPages} pages)` : "See pricing (default ~25 pages)"}
-                  </Link>
-                  <Link
-                    href={`/checkout?plan=chatbot-2y${roastData.estimatedPages ? `&pages=${roastData.estimatedPages}` : "&pages=25"}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}`}
-                    onClick={() => handleContinueToScan()}
-                    className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-                  >
-                    Get started →
-                  </Link>
+                  {origin === "homepage" && (() => {
+                    const pages = roastData?.estimatedPages ?? 25;
+                    const price = getPriceFromPagesAndYears(pages, 2);
+                    const checkoutHref = `/checkout?plan=chatbot-2y&pages=${pages}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}`;
+                    return (
+                      <Link
+                        href={price !== null ? checkoutHref : "/#pricing"}
+                        onClick={() => {
+                          handleContinueToScan();
+                          saveLastScan(effectiveUrl, pages, displayUrl);
+                        }}
+                        className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                      >
+                        {price !== null
+                          ? `Pay $${price.toLocaleString()} (2-yr, ~${pages} pages) →`
+                          : `~${pages} pages — Contact us`}
+                      </Link>
+                    );
+                  })()}
                 </div>
               </motion.div>
             )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect, useCallback } from "react";
 import { Header } from "@/components/landing/Header";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { HowItWorks } from "@/components/landing/HowItWorks";
@@ -8,20 +8,50 @@ import { PricingSection } from "@/components/landing/PricingSection";
 import { FaqSection } from "@/components/landing/FaqSection";
 import { CtaSection } from "@/components/landing/CtaSection";
 import { Footer } from "@/components/landing/Footer";
-import { ScanModal } from "@/components/ScanModal";
+import { ScanModal, LAST_SCAN_KEY } from "@/components/ScanModal";
+
+function getLastScan(): { url: string; displayUrl: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(LAST_SCAN_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as { url?: string; displayUrl?: string };
+    if (data?.url) return { url: data.url, displayUrl: data.displayUrl ?? data.url.replace(/^https?:\/\//, "").replace(/\/$/, "") };
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export default function HomePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [scanUrl, setScanUrl] = useState("https://example.com");
+  const [lastScan, setLastScan] = useState<{ url: string; displayUrl: string } | null>(null);
+
+  const refreshLastScan = useCallback(() => setLastScan(getLastScan()), []);
+
+  useEffect(() => {
+    refreshLastScan();
+  }, [refreshLastScan]);
 
   const handleScanClick = (url: string) => {
     setScanUrl(url);
     setModalOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    refreshLastScan();
+  };
+
+  const handleOpenLastScan = (url: string) => {
+    setScanUrl(url);
+    setModalOpen(true);
+  };
+
   return (
     <main className="min-h-screen bg-background">
-      <Header />
+      <Header lastScan={lastScan} onOpenLastScan={handleOpenLastScan} />
       <HeroSection onScanClick={handleScanClick} />
       <HowItWorks />
       <Suspense
@@ -43,7 +73,7 @@ export default function HomePage() {
 
       <ScanModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={handleCloseModal}
         url={scanUrl}
         onScanComplete={(url) => setScanUrl(url)}
       />

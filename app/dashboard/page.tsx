@@ -122,7 +122,7 @@ function DashboardContent() {
   useEffect(() => {
     if (!clerkLoaded) return;
     let mounted = true;
-    const load = (retries = 2) => {
+    const load = (retries = 1) => {
       fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`, { credentials: "include", cache: "no-store" })
         .then(async (res) => {
           if (res.ok) {
@@ -132,14 +132,14 @@ function DashboardContent() {
             return;
           }
           const err = await res.json().catch(() => ({}));
-          // Retry on 401 (session may not be ready yet after sign-up redirect)
+          // Retry on 401 once (session may not be ready yet after sign-in redirect)
           if (res.status === 401 && retries > 0) {
-            setTimeout(() => load(retries - 1), 800);
+            setTimeout(() => load(retries - 1), 1000);
             return;
           }
-          if (res.status === 401 && retries === 0) {
-            // Session still not valid after retries – reload to re-run middleware and get fresh session
-            if (mounted) window.location.reload();
+          if (res.status === 401) {
+            if (mounted) setError("Sign in required");
+            if (mounted) setLoading(false);
             return;
           }
           if (mounted) setError((err as { error?: string }).error ?? "Could not load dashboard");
@@ -152,8 +152,9 @@ function DashboardContent() {
     };
     setLoading(true);
     setError(null);
-    load();
-    return () => { mounted = false; };
+    // Short delay so the first request has the session cookie attached (avoids 401 flicker)
+    const t = setTimeout(() => { if (mounted) load(); }, 200);
+    return () => { clearTimeout(t); mounted = false; };
   }, [orderId, clerkLoaded]);
 
   useEffect(() => {
@@ -297,33 +298,41 @@ function DashboardContent() {
         </div>
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center max-w-md">
-          <p className="text-muted-foreground mb-4">{error ?? "Order not found"}</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => {
-                setError(null);
-                setLoading(true);
-                fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`, { credentials: "include", cache: "no-store" })
-                  .then(async (res) => {
-                    const json = await res.json();
-                    if (res.ok) {
-                      setData(json);
-                    } else {
-                      setError((json as { error?: string }).error ?? "Could not load dashboard");
-                    }
-                  })
-                  .catch(() => setError("Could not load dashboard"))
-                  .finally(() => setLoading(false));
-              }}
-              className="text-sm px-4 py-2 border border-border rounded hover:bg-muted"
-            >
-              Retry
-            </button>
-            <Link href="/" className="text-sm px-4 py-2 text-primary hover:underline">
-              Back to home
-            </Link>
+            <p className="text-muted-foreground mb-4">{error ?? "Order not found"}</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
+              {error === "Sign in required" && (
+                <Link
+                  href="/sign-in"
+                  className="text-sm px-4 py-2 rounded bg-primary text-primary-foreground hover:opacity-90"
+                >
+                  Sign in again
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`, { credentials: "include", cache: "no-store" })
+                    .then(async (res) => {
+                      const json = await res.json();
+                      if (res.ok) {
+                        setData(json);
+                      } else {
+                        setError((json as { error?: string }).error ?? "Could not load dashboard");
+                      }
+                    })
+                    .catch(() => setError("Could not load dashboard"))
+                    .finally(() => setLoading(false));
+                }}
+                className="text-sm px-4 py-2 border border-border rounded hover:bg-muted"
+              >
+                Retry
+              </button>
+              <Link href="/" className="text-sm px-4 py-2 text-primary hover:underline">
+                Back to home
+              </Link>
+            </div>
           </div>
-        </div>
         </div>
       </main>
     );
