@@ -89,8 +89,8 @@ export async function GET(req: NextRequest) {
         AND NOT EXISTS (SELECT 1 FROM content ct WHERE ct.customer_id = c.id)
     `);
     type ReminderRow = { order_id: string; user_id: string; email: string; name: string | null; business_name: string };
-    const reminderRows = ((needReminder as { rows?: ReminderRow[] }).rows ?? needReminder) as ReminderRow[] | unknown;
-    const list = Array.isArray(reminderRows) ? reminderRows : [];
+    const raw = needReminder as unknown as { rows?: ReminderRow[] };
+    const list = Array.isArray(raw?.rows) ? raw.rows : [];
 
     for (const row of list) {
       if (!row.email) continue;
