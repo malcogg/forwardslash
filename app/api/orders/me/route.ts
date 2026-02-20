@@ -4,6 +4,8 @@ import { orders, customers, content } from "@/db/schema";
 import { eq, desc, count } from "drizzle-orm";
 import { getOrCreateUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/orders/me
  * Returns current user's orders with customers (for sidebar, site list).

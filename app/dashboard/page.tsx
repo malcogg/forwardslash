@@ -150,7 +150,7 @@ function DashboardContent() {
   }, [orderId]);
 
   useEffect(() => {
-    fetch("/api/orders/me").then((res) => (res.ok ? res.json() : [])).then(setMyOrders).catch(() => {});
+    fetch("/api/orders/me", { credentials: "include" }).then((res) => (res.ok ? res.json() : [])).then(setMyOrders).catch(() => {});
   }, []);
 
   const handleDeleteSite = async (orderIdToDelete: string) => {
@@ -203,8 +203,8 @@ function DashboardContent() {
           return;
         }
         const [dashRes, ordersRes] = await Promise.all([
-          fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`),
-          fetch("/api/orders/me"),
+          fetch(`/api/dashboard${orderId ? `?orderId=${encodeURIComponent(orderId)}` : ""}`, { credentials: "include" }),
+          fetch("/api/orders/me", { credentials: "include" }),
         ]);
         if (dashRes.ok) setData(await dashRes.json());
         if (ordersRes.ok) setMyOrders(await ordersRes.json());
