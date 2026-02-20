@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense, useRef } from "react";
+import { useState, useEffect, Suspense, useRef, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { PENDING_SCAN_URL_KEY } from "@/components/ScanModal";
 import { UserButton, useUser, useAuth } from "@clerk/nextjs";
-import { Globe, Check, ChevronDown, X, Monitor, Tablet, Smartphone, Copy, ExternalLink, Trash2 } from "lucide-react";
+import { Globe, Check, ChevronDown, X, Monitor, Tablet, Smartphone, Copy, ExternalLink, Trash2, Bell } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CustomerChat } from "@/components/CustomerChat";
 import { ScanModal } from "@/components/ScanModal";
@@ -131,12 +131,21 @@ function DashboardContent() {
   }[]>([]);
   const [cartModalOpen, setCartModalOpen] = useState(false);
   const [cartSelectedIds, setCartSelectedIds] = useState<Set<string>>(new Set());
+  type NotificationItem = { id: string; title: string; body: string; read: boolean };
+  const [notificationReadIds, setNotificationReadIds] = useState<Set<string>>(() => new Set());
+
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [crawling, setCrawling] = useState(false);
   const [crawlError, setCrawlError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const ONBOARDING_SEEN_KEY = "forwardslash_onboarding_seen";
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
 
   // Wait for signed-in user; send Bearer token so API has session (fixes 401 when cookie not sent after redirect)
   useEffect(() => {
@@ -220,6 +229,15 @@ function DashboardContent() {
     }, 30_000);
     return () => clearInterval(interval);
   }, [orderId, data?.order?.status, data?.order?.id]);
+
+  useEffect(() => {
+    if (!canCallApi || loading || error) return;
+    try {
+      if (!localStorage.getItem(ONBOARDING_SEEN_KEY)) setShowOnboardingModal(true);
+    } catch {
+      /* ignore */
+    }
+  }, [canCallApi, loading, error]);
 
   const handleDeleteSite = async (orderIdToDelete: string) => {
     if (deletingOrderId) return;
@@ -400,6 +418,69 @@ function DashboardContent() {
     { key: "live", label: "Chatbot live", done: customer?.status === "delivered" },
   ];
 
+  const hasPaidOrder = myOrders.some((o) => o.order.status === "paid");
+  const customerStatus = customer?.status ?? "";
+  const isLive = customerStatus === "delivered";
+  const isTestingOrLive = ["testing", "delivered"].includes(customerStatus);
+
+  const notifications = useMemo(() => {
+    type Config = { id: string; title: string; body: string };
+    const configs: Config[] = [];
+
+    configs.push({
+      id: "welcome",
+      title: "Welcome to ForwardSlash",
+      body: "Your dashboard is where you'll manage your AI chatbot: add your site, train it on your content, and connect your domain. Need help? Reply to any email from us or use the support link in the footer.",
+    });
+
+    if (myOrders.length >= 1 && !hasPaidOrder) {
+      configs.push({
+        id: "site_added",
+        title: "You added a site",
+        body: "Complete checkout to unlock your AI chatbot. We'll train it on your content and deploy it at chat.yourdomain.com.",
+      });
+    }
+
+    if (isPaid && contentCount === 0) {
+      configs.push({
+        id: "payment_confirmed",
+        title: "Payment confirmed",
+        body: "We're building your chatbot. Click \"Build my chatbot\" in the Training section to crawl your site and train the AI on your content.",
+      });
+    }
+
+    if (isPaid && contentCount > 0 && !isTestingOrLive) {
+      configs.push({
+        id: "crawl_done",
+        title: "Content ready",
+        body: `We've crawled ${contentCount} pages. Your chatbot is being trained on your content. Next: we'll email you when it's time to add your domain (e.g. chat.yoursite.com).`,
+      });
+    }
+
+    if (isPaid && contentCount > 0 && isTestingOrLive && !isLive) {
+      configs.push({
+        id: "domain_next",
+        title: "Add your domain",
+        body: "Your chatbot is ready for testing. Add the CNAME record we sent you (e.g. chat.yoursite.com) to go live.",
+      });
+    }
+
+    if (isLive) {
+      configs.push({
+        id: "go_live",
+        title: "Your chatbot is live",
+        body: "Your AI chatbot is live at your domain. Share the link with customers and we'll keep it updated.",
+      });
+    }
+
+    return configs.map((c) => ({
+      id: c.id,
+      title: c.title,
+      body: c.body,
+      read: notificationReadIds.has(c.id),
+    }));
+  }, [myOrders.length, hasPaidOrder, isPaid, contentCount, isTestingOrLive, isLive, notificationReadIds]);
+
   return (
     <main className="min-h-screen bg-background">
       {/* Browser bar */}
@@ -421,11 +502,53 @@ function DashboardContent() {
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">PRO</span>
           )}
           <ThemeToggle />
-          <div className="flex items-center gap-1">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNotificationOpen((o) => !o)}
+              className="relative p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {notifications.some((n) => !n.read) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500" />
+              )}
+            </button>
+            {notificationOpen && (
+              <>
+                <div className="fixed inset-0 z-40" aria-hidden onClick={() => setNotificationOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 w-80 max-h-[320px] overflow-y-auto rounded-xl border border-border bg-background shadow-xl z-50 py-1">
+                <p className="px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">Notifications</p>
+                {notifications.length === 0 ? (
+                  <p className="px-3 py-4 text-sm text-muted-foreground">No notifications yet.</p>
+                ) : (
+                  notifications.map((n) => (
+                    <button
+                      key={n.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedNotification(n);
+                        setNotificationOpen(false);
+                      }}
+                      className={`w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 flex flex-col gap-0.5 ${!n.read ? "bg-muted/30" : ""}`}
+                    >
+                      <span className="font-medium text-foreground">{n.title}</span>
+                      <span className="text-xs text-muted-foreground line-clamp-1">{n.body}</span>
+                    </button>
+                  ))
+                )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="relative inline-block">
             <UserButton afterSignOutUrl="/" />
             {myOrders.some((o) => o.order.status === "paid") && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white" title="Verified customer">
-                <Check className="h-3 w-3" strokeWidth={2.5} />
+              <span
+                className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-background bg-emerald-500 text-white"
+                title="Verified customer"
+              >
+                <Check className="h-2.5 w-2.5" strokeWidth={2.5} />
               </span>
             )}
           </div>
@@ -539,6 +662,7 @@ function DashboardContent() {
 
           <div className="pt-6 border-t border-border mt-4">
             {(() => {
+              const hasPaidOrder = myOrders.some((o) => o.order.status === "paid");
               const totalPages = myOrders.reduce((s, o) => s + (o.estimatedPages ?? 25), 0);
               const totalCrawled = myOrders.reduce((s, o) => s + (o.contentCount ?? 0), 0);
               const selectedPages = myOrders
@@ -552,7 +676,7 @@ function DashboardContent() {
                   <div className="text-sm font-medium text-red-500 dark:text-red-400">
                     {totalCrawled} / {totalPages > 0 ? totalPages : "—"} crawled
                   </div>
-                  {hasSites && (
+                  {hasSites && !hasPaidOrder && (
                     <motion.button
                       type="button"
                       onClick={openCartModal}
@@ -994,6 +1118,158 @@ function DashboardContent() {
                 </div>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* First-time welcome onboarding modal: blur background, center, step-through */}
+      {showOnboardingModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={(e) => e.target === e.currentTarget && (localStorage.setItem(ONBOARDING_SEEN_KEY, "1"), setShowOnboardingModal(false), setOnboardingStep(0))}
+        >
+          <div
+            className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                try { localStorage.setItem(ONBOARDING_SEEN_KEY, "1"); } catch {}
+                setShowOnboardingModal(false);
+                setOnboardingStep(0);
+              }}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+              aria-label="Skip"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {onboardingStep === 0 && (
+              <>
+                <h3 className="font-serif text-xl font-semibold text-foreground pr-8">Thanks for signing up!</h3>
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                  Welcome to ForwardSlash. Here&apos;s how to get your AI chatbot live in a few steps.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep(1)}
+                  className="mt-6 w-full py-3 px-4 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+                >
+                  Next
+                </button>
+              </>
+            )}
+            {onboardingStep === 1 && (
+              <>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Step 1</p>
+                <h3 className="font-serif text-xl font-semibold text-foreground mt-1">Add your site</h3>
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                  Use &quot;Scan site&quot; in the sidebar to add your website. We&apos;ll add it here so you can train your chatbot on your content.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep(2)}
+                  className="mt-6 w-full py-3 px-4 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+                >
+                  Next
+                </button>
+              </>
+            )}
+            {onboardingStep === 2 && (
+              <>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Step 2</p>
+                <h3 className="font-serif text-xl font-semibold text-foreground mt-1">Checkout</h3>
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                  Pay once to unlock your AI chatbot. No monthly fees — hosting included. Then come back here to continue.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep(3)}
+                  className="mt-6 w-full py-3 px-4 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+                >
+                  Next
+                </button>
+              </>
+            )}
+            {onboardingStep === 3 && (
+              <>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Step 3</p>
+                <h3 className="font-serif text-xl font-semibold text-foreground mt-1">We train your AI</h3>
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                  Click &quot;Build my chatbot&quot; and we&apos;ll crawl your site and train the AI on your content. You can preview the chat here.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep(4)}
+                  className="mt-6 w-full py-3 px-4 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+                >
+                  Next
+                </button>
+              </>
+            )}
+            {onboardingStep === 4 && (
+              <>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Step 4</p>
+                <h3 className="font-serif text-xl font-semibold text-foreground mt-1">Go live</h3>
+                <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+                  When we email you, add your domain (e.g. chat.yoursite.com) with the CNAME we send. Your chatbot goes live — no monthly fees.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try { localStorage.setItem(ONBOARDING_SEEN_KEY, "1"); } catch {}
+                    setShowOnboardingModal(false);
+                    setOnboardingStep(0);
+                  }}
+                  className="mt-6 w-full py-3 px-4 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+                >
+                  Get started
+                </button>
+              </>
+            )}
+            <div className="flex justify-center gap-1.5 mt-4">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 w-1.5 rounded-full transition-colors ${i === onboardingStep ? "bg-emerald-600" : "bg-muted-foreground/30"}`}
+                  aria-hidden
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification detail modal: blur background, center */}
+      {selectedNotification && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => {
+            if (selectedNotification) setNotificationReadIds((prev) => new Set(prev).add(selectedNotification.id));
+            setSelectedNotification(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-foreground">{selectedNotification.title}</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedNotification) setNotificationReadIds((prev) => new Set(prev).add(selectedNotification.id));
+                  setSelectedNotification(null);
+                }}
+                className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {selectedNotification.body}
+            </p>
           </div>
         </div>
       )}
