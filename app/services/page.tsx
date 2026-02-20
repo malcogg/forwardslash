@@ -38,8 +38,8 @@ export default function ServicesPage() {
               size="lg"
               className="mt-10 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-8 text-base"
             >
-              <Link href={`${CHECKOUT_BASE}?plan=starter`}>
-                Get Started for $350 – Quick & Simple
+              <Link href="/services#pricing">
+                Get started
               </Link>
             </Button>
             <p className="mt-6 text-sm text-muted-foreground">

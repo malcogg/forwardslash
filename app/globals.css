@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
 /* Design tokens from Vercel AI Chatbot template */
 :root {
   --background: hsl(0 0% 100%);

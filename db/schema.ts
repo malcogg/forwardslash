@@ -54,13 +54,15 @@ export const scans = pgTable("scans", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Orders - payments
+// Orders - payments (chatbot + website services)
 export const orders = pgTable("orders", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => users.id),
   scanId: uuid("scan_id").references(() => scans.id),
   amountCents: integer("amount_cents").notNull(),
-  bundleYears: integer("bundle_years").notNull(), // 1-5
+  bundleYears: integer("bundle_years").notNull(), // 1-5 for chatbot; 0 for website
+  planSlug: text("plan_slug"), // starter | new-build | redesign | chatbot-1y | chatbot-2y
+  addOns: jsonb("add_ons").$type<string[]>().notNull().default([]),
   dnsHelp: boolean("dns_help").notNull().default(false),
   status: text("status").notNull().default("pending"), // pending | paid | processing | delivered | failed
   paymentProvider: text("payment_provider"), // paypal | stripe

@@ -109,7 +109,7 @@ function DashboardContent() {
   }, [scanDropdownOpen]);
 
   const [data, setData] = useState<{
-    order: { id: string; status: string; amountCents: number; bundleYears: number; dnsHelp: boolean };
+    order: { id: string; status: string; amountCents: number; bundleYears: number; dnsHelp: boolean; planSlug?: string; addOns?: string[] };
     customer: {
       id: string;
       businessName: string;
@@ -124,7 +124,7 @@ function DashboardContent() {
     contentCount?: number;
   } | null>(null);
   const [myOrders, setMyOrders] = useState<{
-    order: { id: string; status?: string };
+    order: { id: string; status?: string; planSlug?: string };
     customer: { businessName: string; websiteUrl: string } | null;
     contentCount: number;
     estimatedPages: number;
@@ -330,10 +330,13 @@ function DashboardContent() {
       title: "Welcome to ForwardSlash",
       body: "Your dashboard is where you'll manage your AI chatbot: add your site, train it on your content, and connect your domain. Need help? Reply to any email from us or use the support link in the footer.",
     });
-    if (myOrders.length >= 1 && !hasPaidOrder) {
+    if (myOrders.length >= 1 && !hasPaidOrder && !isWebsiteOrder) {
       configs.push({ id: "site_added", title: "You added a site", body: "Complete checkout to unlock your AI chatbot. We'll train it on your content and deploy it at chat.yourdomain.com." });
     }
-    if (isPaid && contentCount === 0) {
+    if (isWebsiteOrder && isPaid) {
+      configs.push({ id: "website_order", title: "Website order confirmed", body: "We've received your payment. We'll reach out soon to start planning your website project." });
+    }
+    if (isPaid && contentCount === 0 && !isWebsiteOrder) {
       configs.push({ id: "payment_confirmed", title: "Payment confirmed", body: "We're building your chatbot. Click \"Build my chatbot\" in the Training section to crawl your site and train the AI on your content." });
     }
     if (isPaid && contentCount > 0 && !isTestingOrLive) {
@@ -346,7 +349,7 @@ function DashboardContent() {
       configs.push({ id: "go_live", title: "Your chatbot is live", body: "Your AI chatbot is live at your domain. Share the link with customers and we'll keep it updated." });
     }
     return configs.map((c) => ({ id: c.id, title: c.title, body: c.body, read: notificationReadIds.has(c.id) }));
-  }, [myOrders.length, hasPaidOrder, isPaid, contentCount, isTestingOrLive, isLive, notificationReadIds]);
+  }, [myOrders.length, hasPaidOrder, isPaid, contentCount, isTestingOrLive, isLive, notificationReadIds, isWebsiteOrder]);
 
   if (loading) {
     return (
@@ -442,12 +445,33 @@ function DashboardContent() {
     : null;
   const canRescan = !lastCrawled || !nextCrawlAvailable || new Date() >= nextCrawlAvailable;
 
-  const STATUS_STEPS = [
-    { key: "payment", label: "Payment confirmed", done: ["paid", "processing", "delivered"].includes(order?.status ?? "") },
-    { key: "content", label: "Content & training", done: (contentCount ?? 0) > 0 || ["dns_setup", "testing", "delivered"].includes(customer?.status ?? "") },
-    { key: "dns", label: "DNS setup", done: ["testing", "delivered"].includes(customer?.status ?? "") },
-    { key: "live", label: "Chatbot live", done: customer?.status === "delivered" },
-  ];
+  const isWebsiteOrder = order?.planSlug && ["starter", "new-build", "redesign"].includes(order.planSlug);
+  const WEBSITE_PLAN_NAMES: Record<string, string> = {
+    starter: "Quick WordPress Starter",
+    "new-build": "Brand New Website Build",
+    redesign: "Website Redesign / Refresh",
+  };
+  const ADD_ON_LABELS: Record<string, string> = {
+    dns: "DNS Setup Help",
+    "social-media": "Social Media Management",
+    starter: "Quick WordPress Starter",
+    "new-build": "Brand New Website Build",
+    redesign: "Website Redesign",
+  };
+
+  const STATUS_STEPS = isWebsiteOrder
+    ? [
+        { key: "payment", label: "Payment confirmed", done: ["paid", "processing", "delivered"].includes(order?.status ?? "") },
+        { key: "planning", label: "Planning & discovery", done: ["processing", "delivered"].includes(order?.status ?? "") },
+        { key: "design", label: "Design & build", done: ["processing", "delivered"].includes(order?.status ?? "") },
+        { key: "delivered", label: "Delivered", done: order?.status === "delivered" },
+      ]
+    : [
+        { key: "payment", label: "Payment confirmed", done: ["paid", "processing", "delivered"].includes(order?.status ?? "") },
+        { key: "content", label: "Content & training", done: (contentCount ?? 0) > 0 || ["dns_setup", "testing", "delivered"].includes(customer?.status ?? "") },
+        { key: "dns", label: "DNS setup", done: ["testing", "delivered"].includes(customer?.status ?? "") },
+        { key: "live", label: "Chatbot live", done: customer?.status === "delivered" },
+      ];
 
   return (
     <main className="min-h-screen bg-background">
@@ -558,7 +582,9 @@ function DashboardContent() {
                   </button>
                 ) : (
                   <>
-                    {myOrders.map(({ order: o, customer: c, estimatedPages: ep }) => (
+                    {myOrders.map(({ order: o, customer: c, estimatedPages: ep }) => {
+                      const isWeb = o.planSlug && ["starter", "new-build", "redesign"].includes(o.planSlug);
+                      return (
                       <div
                         key={o.id}
                         className={`flex items-center gap-2 px-3 py-2 rounded group ${
@@ -572,7 +598,9 @@ function DashboardContent() {
                         >
                           {c?.websiteUrl?.replace(/^https?:\/\//, "").replace(/\/$/, "") ?? c?.businessName ?? "Order"}
                         </Link>
-                        <span className="text-xs text-muted-foreground shrink-0">~{ep} pg</span>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {isWeb ? WEBSITE_PLAN_NAMES[o.planSlug!]?.split(" ")[0] ?? "Web" : `~${ep} pg`}
+                        </span>
                         <button
                           type="button"
                           onClick={(e) => {
@@ -586,7 +614,7 @@ function DashboardContent() {
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
-                    ))}
+                    );})}
                     <button
                       type="button"
                       onClick={() => {
@@ -681,7 +709,7 @@ function DashboardContent() {
         <div className={`border-r border-border overflow-y-auto shrink-0 ${activePanel === "design" ? "w-64 p-4" : "min-w-[280px] flex-1 max-w-md p-6"}`}>
           {activePanel === "design" && (
             <>
-              {hasOrder && !isPaid && contentCount > 0 && (
+              {hasOrder && !isPaid && contentCount > 0 && !isWebsiteOrder && (
                 <div className="mb-6 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
                   <p className="text-sm font-medium text-foreground mb-1">Scraping complete! We have {contentCount} pages of data ready.</p>
                   <p className="text-sm text-muted-foreground mb-3">Payment unlocks full training of your custom AI chatbot. We use your scraped data to fine-tune and deploy a ready-to-use chatbot at chat.yourdomain.com.</p>
@@ -723,6 +751,42 @@ function DashboardContent() {
                   </Link>
                   <p className="text-xs text-muted-foreground">
                     One payment. Your domain. Hosting included.
+                  </p>
+                </div>
+              ) : isWebsiteOrder ? (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-foreground">Your website order</h4>
+                  <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Plan</span>
+                      <span className="font-medium text-foreground">
+                        {order?.planSlug ? WEBSITE_PLAN_NAMES[order.planSlug] ?? order.planSlug : "Website"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-medium text-foreground">
+                        ${((order?.amountCents ?? 0) / 100).toLocaleString()}
+                      </span>
+                    </div>
+                    {(order?.addOns?.length ?? 0) > 0 && (
+                      <div className="pt-2 border-t border-border">
+                        <span className="text-xs text-muted-foreground block mb-1">Add-ons</span>
+                        <ul className="text-sm text-foreground space-y-0.5">
+                          {order?.addOns?.map((id) => (
+                            <li key={id}>{ADD_ON_LABELS[id] ?? id}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <div><span className="text-xs text-muted-foreground">Business</span><p className="text-sm text-foreground">{customer?.businessName ?? "—"}</p></div>
+                    <div><span className="text-xs text-muted-foreground">Domain</span><p className="text-sm text-foreground">{customer?.domain ?? "—"}</p></div>
+                    <div><span className="text-xs text-muted-foreground">Website</span><p className="text-sm text-foreground truncate">{customer?.websiteUrl ?? "—"}</p></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We&apos;ll reach out soon to start your project. Questions? Email hello@forwardslash.chat
                   </p>
                 </div>
               ) : (
@@ -790,7 +854,7 @@ function DashboardContent() {
                 </div>
               )}
 
-              {hasOrder && (
+              {hasOrder && !isWebsiteOrder && (
                 <div className="flex gap-2 mt-6">
                   <button className="px-3 py-1.5 text-sm border border-border rounded text-foreground">Discard</button>
                   <button className="px-3 py-1.5 text-sm bg-foreground text-background rounded">Save</button>
@@ -802,7 +866,20 @@ function DashboardContent() {
           {activePanel === "domains" && (
             <>
               <h2 className="text-lg font-semibold text-foreground mb-4">Domain</h2>
-              {customer ? (
+              {isWebsiteOrder ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Your website will be built and deployed to your domain. We&apos;ll handle hosting and DNS setup as part of your package.
+                  </p>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Domain: </span>
+                    <span className="font-medium text-foreground">{customer?.domain ?? "—"}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We&apos;ll reach out when it&apos;s time to connect your domain.
+                  </p>
+                </div>
+              ) : customer ? (
                 <>
                   <p className="text-sm text-muted-foreground mb-4">Add this CNAME record to your DNS:</p>
                   <div className="relative">
@@ -862,9 +939,24 @@ function DashboardContent() {
 
         </div>
 
-        {/* Chat preview */}
+        {/* Chat preview / Website order summary */}
         <div className="flex-1 min-w-[320px] p-4 flex flex-col bg-muted/10">
-          {customer ? (
+          {isWebsiteOrder ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8">
+              <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full">
+                <h3 className="font-medium text-foreground mb-2">Your website order</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {order?.planSlug ? WEBSITE_PLAN_NAMES[order.planSlug] ?? order.planSlug : "Website"} — ${((order?.amountCents ?? 0) / 100).toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Status: <span className="capitalize text-foreground">{order?.status ?? "pending"}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-4">
+                  We&apos;ll be in touch soon to start your project.
+                </p>
+              </div>
+            </div>
+          ) : customer ? (
             <div className="flex-1 flex flex-col min-h-0 min-w-0">
               {/* Device view toggle + preview frame */}
               <div className="flex items-center justify-between mb-2">

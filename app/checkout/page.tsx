@@ -24,7 +24,7 @@ function safeInitialUrl(param: string | null): string {
   return sanitizeWebsiteUrl(raw).slice(0, LIMITS.websiteUrl);
 }
 
-type PlanSlug = "chatbot-1y" | "chatbot-2y";
+type PlanSlug = "chatbot-1y" | "chatbot-2y" | "starter" | "new-build" | "redesign";
 
 const CHATBOT_DESCRIPTION = "Custom AI trained on your site, chat.yourdomain.com. Hosting included. One-time payment.";
 
@@ -32,32 +32,54 @@ const CAL_LINK = process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/f
 const PAYPAL_ME_USER = "michael239";
 const PHONE_NUMBER = "619-719-5932";
 
-type AddOnId = "dns" | "starter" | "new-build" | "redesign";
-
-const ADD_ONS: { id: AddOnId; label: string; price: number; description: string }[] = [
+const WEBSITE_PLANS: {
+  slug: PlanSlug;
+  name: string;
+  price: number;
+  description: string;
+}[] = [
   {
-    id: "dns",
-    label: "DNS Setup Help",
-    price: 99,
-    description: "We handle the DNS records for you.",
-  },
-  {
-    id: "starter",
-    label: "Quick WordPress Starter",
+    slug: "starter",
+    name: "Quick WordPress Starter",
     price: 350,
     description: "10 clean pages, mobile-ready, basic SEO, year 1 hosting included.",
   },
   {
-    id: "new-build",
-    label: "Brand New Website Build",
+    slug: "new-build",
+    name: "Brand New Website Build",
     price: 1000,
     description: "Full custom site + mobile-responsive, year 1 hosting.",
   },
   {
-    id: "redesign",
-    label: "Website Redesign / Refresh",
+    slug: "redesign",
+    name: "Website Redesign / Refresh",
     price: 2000,
     description: "Modern redesign, speed & SEO upgrades, year 1 hosting.",
+  },
+];
+
+type AddOnId = "dns" | "starter" | "new-build" | "redesign" | "social-media";
+
+const ADD_ONS_CHATBOT: { id: AddOnId; label: string; price: number; description: string }[] = [
+  { id: "dns", label: "DNS Setup Help", price: 99, description: "We handle the DNS records for you." },
+  { id: "starter", label: "Quick WordPress Starter", price: 350, description: "10 clean pages, mobile-ready, basic SEO, year 1 hosting included." },
+  { id: "new-build", label: "Brand New Website Build", price: 1000, description: "Full custom site + mobile-responsive, year 1 hosting." },
+  { id: "redesign", label: "Website Redesign / Refresh", price: 2000, description: "Modern redesign, speed & SEO upgrades, year 1 hosting." },
+  {
+    id: "social-media",
+    label: "Social Media Management",
+    price: 599,
+    description: "First month $599 (setup, planning, customer interaction). Then $400/month. 3 posts/day on all social accounts. We create images, videos, branding.",
+  },
+];
+
+const ADD_ONS_WEBSITE: { id: AddOnId; label: string; price: number; description: string }[] = [
+  { id: "dns", label: "DNS Setup Help", price: 99, description: "We handle the DNS records for you." },
+  {
+    id: "social-media",
+    label: "Social Media Management",
+    price: 599,
+    description: "First month $599 (setup, planning, customer interaction). Then $400/month. 3 posts/day on all social accounts. We create images, videos, branding.",
   },
 ];
 
@@ -72,23 +94,47 @@ function CheckoutContent() {
     }
   }, [isSignedIn]);
 
+  const planParam = searchParams.get("plan");
+  const isWebsitePlan =
+    planParam === "starter" || planParam === "new-build" || planParam === "redesign";
+  const websitePlan = WEBSITE_PLANS.find((p) => p.slug === planParam);
+
   const yearsParam = searchParams.get("years");
   const years: 1 | 2 = yearsParam === "1" ? 1 : 2;
-  const effectivePlanSlug: PlanSlug = years === 2 ? "chatbot-2y" : "chatbot-1y";
   const pagesParam = searchParams.get("pages");
   const pages = pagesParam ? Math.min(499, Math.max(1, parseInt(pagesParam, 10) || 25)) : 25;
-  const planPrice = getPriceFromPagesAndYears(pages, years) ?? 799;
-  const plan = {
-    name: `AI Chatbot — ${years}-year, ~${pages} pages`,
-    description: CHATBOT_DESCRIPTION,
-    price: planPrice,
-  };
+  const chatbotPlanSlug: PlanSlug = years === 2 ? "chatbot-2y" : "chatbot-1y";
+  const chatbotPrice = getPriceFromPagesAndYears(pages, years) ?? 799;
+
+  const effectivePlanSlug: PlanSlug = isWebsitePlan && websitePlan
+    ? websitePlan.slug
+    : chatbotPlanSlug;
+
+  const plan = isWebsitePlan && websitePlan
+    ? {
+        name: websitePlan.name,
+        description: websitePlan.description,
+        price: websitePlan.price,
+      }
+    : {
+        name: `AI Chatbot — ${years}-year, ~${pages} pages`,
+        description: CHATBOT_DESCRIPTION,
+        price: chatbotPrice,
+      };
+
+  const addOnsList = isWebsitePlan && websitePlan ? ADD_ONS_WEBSITE : ADD_ONS_CHATBOT;
 
   const setCheckoutYears = (y: 1 | 2) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("years", String(y));
     params.set("plan", y === 2 ? "chatbot-2y" : "chatbot-1y");
     if (!params.has("pages")) params.set("pages", String(pages));
+    router.replace(`/checkout?${params.toString()}`, { scroll: false });
+  };
+
+  const setWebsitePlan = (slug: PlanSlug) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("plan", slug);
     router.replace(`/checkout?${params.toString()}`, { scroll: false });
   };
 
@@ -118,9 +164,9 @@ function CheckoutContent() {
     });
   };
 
-  const addOnsTotal = ADD_ONS.reduce((sum, a) => (addOns.has(a.id) ? sum + a.price : sum), 0);
+  const addOnsTotal = addOnsList.reduce((sum, a) => (addOns.has(a.id) ? sum + a.price : sum), 0);
   const subtotal = plan.price + addOnsTotal;
-  const addOnLabels = ADD_ONS.filter((a) => addOns.has(a.id)).map((a) => a.label);
+  const addOnLabels = addOnsList.filter((a) => addOns.has(a.id)).map((a) => a.label);
   const paypalDescription =
     addOnLabels.length > 0
       ? `ForwardSlash.Chat - ${plan.name} + ${addOnLabels.join(", ")}`
@@ -174,28 +220,56 @@ function CheckoutContent() {
       <div className="max-w-3xl mx-auto">
         <h1 className="font-serif text-2xl md:text-3xl text-foreground mb-2">Checkout</h1>
 
-        {/* Plan + year toggle at top */}
+        {/* Dynamic plan at top — website or chatbot */}
         <div className="rounded-xl border border-border bg-card p-6 mb-8">
-          <h2 className="font-serif text-lg font-medium text-foreground mb-1">AI Chatbot</h2>
-          <p className="text-sm text-muted-foreground mb-4">~{pages} pages from your site. Choose your term:</p>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
-              <button
-                type="button"
-                onClick={() => setCheckoutYears(1)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${years === 1 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                1 year — ${getPriceFromPagesAndYears(pages, 1)?.toLocaleString() ?? "—"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setCheckoutYears(2)}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${years === 2 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                2 years — ${getPriceFromPagesAndYears(pages, 2)?.toLocaleString() ?? "—"}
-              </button>
-            </div>
-          </div>
+          {isWebsitePlan && websitePlan ? (
+            <>
+              <h2 className="font-serif text-lg font-medium text-foreground mb-1">Your website plan</h2>
+              <p className="text-sm text-muted-foreground mb-4">Select a different plan or continue with your selection:</p>
+              <div className="flex flex-wrap gap-2">
+                {WEBSITE_PLANS.map((p) => (
+                  <button
+                    key={p.slug}
+                    type="button"
+                    onClick={() => setWebsitePlan(p.slug)}
+                    className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                      websitePlan.slug === p.slug
+                        ? "border-emerald-500 bg-emerald-500/10 text-foreground"
+                        : "border-border hover:border-muted-foreground/50 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {p.name} — ${p.price.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                <strong className="text-foreground">{websitePlan.name}</strong> — ${websitePlan.price.toLocaleString()}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="font-serif text-lg font-medium text-foreground mb-1">AI Chatbot</h2>
+              <p className="text-sm text-muted-foreground mb-4">~{pages} pages from your site. Choose your term:</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutYears(1)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${years === 1 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    1 year — ${getPriceFromPagesAndYears(pages, 1)?.toLocaleString() ?? "—"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutYears(2)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${years === 2 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  >
+                    2 years — ${getPriceFromPagesAndYears(pages, 2)?.toLocaleString() ?? "—"}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Your details */}
@@ -304,7 +378,7 @@ function CheckoutContent() {
           <h2 className="font-serif text-lg font-medium text-foreground mb-1">Enhance your package</h2>
           <p className="text-sm text-muted-foreground mb-4">One-time add-ons — pick what fits.</p>
           <div className="space-y-3">
-            {ADD_ONS.map((addOn) => {
+            {addOnsList.map((addOn) => {
               const checked = addOns.has(addOn.id);
               return (
                 <label
@@ -362,7 +436,7 @@ function CheckoutContent() {
             </div>
             {addOns.size > 0 && (
               <div className="pt-4 border-t border-border space-y-2">
-                {ADD_ONS.filter((a) => addOns.has(a.id)).map((addOn) => (
+                {addOnsList.filter((a) => addOns.has(a.id)).map((addOn) => (
                   <div key={addOn.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{addOn.label}</span>
                     <span className="text-foreground">+${addOn.price.toLocaleString()}</span>
@@ -376,6 +450,13 @@ function CheckoutContent() {
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-4">Hosting included. One-time payment. No monthly fees.</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            After payment,{" "}
+            <Link href="/thank-you" className="text-primary hover:underline">
+              create an account
+            </Link>{" "}
+            to track your order and get updates.
+          </p>
 
           {detailsComplete && subtotal > 0 ? (
             <div className="mt-6">

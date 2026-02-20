@@ -13,7 +13,17 @@ import {
   isValidUrl,
 } from "@/lib/validation";
 
-const VALID_ADD_ONS = new Set(["dns", "ai-chatbot", "logo", "seo", "blog"]);
+const VALID_ADD_ONS = new Set([
+  "dns",
+  "ai-chatbot",
+  "logo",
+  "seo",
+  "blog",
+  "starter",
+  "new-build",
+  "redesign",
+  "social-media",
+]);
 
 function sanitizeAddOns(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
