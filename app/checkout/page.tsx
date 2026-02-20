@@ -24,59 +24,17 @@ function safeInitialUrl(param: string | null): string {
   return sanitizeWebsiteUrl(raw).slice(0, LIMITS.websiteUrl);
 }
 
-type PlanSlug = "starter" | "new-build" | "redesign" | "chatbot" | "chatbot-1y" | "chatbot-2y" | "chatbot-3y";
+type PlanSlug = "chatbot-1y" | "chatbot-2y";
 
-const PLANS: Record<PlanSlug, { name: string; price: number; description: string }> = {
-  starter: {
-    name: "Quick WordPress Starter",
-    price: 350,
-    description: "10 clean pages, mobile-ready, basic SEO, year 1 hosting included",
-  },
-  "new-build": {
-    name: "Brand New Website Build",
-    price: 1000,
-    description: "Full custom site + AI chatbot, mobile-responsive, year 1 hosting",
-  },
-  redesign: {
-    name: "Website Redesign / Refresh",
-    price: 2000,
-    description: "Modern redesign + AI chatbot, speed & SEO upgrades, year 1 hosting",
-  },
-  chatbot: {
-    name: "AI Chatbot (1-Year Starter)",
-    price: 799,
-    description: "Custom AI trained on your site, chat.yourdomain.com, year 1 hosting",
-  },
-  "chatbot-1y": {
-    name: "AI Chatbot (1-Year Starter)",
-    price: 799,
-    description: "Custom AI trained on your site, chat.yourdomain.com, year 1 hosting",
-  },
-  "chatbot-2y": {
-    name: "AI Chatbot (2-Year Bundle)",
-    price: 1099,
-    description: "Custom AI trained on your site, 2-year hosting included",
-  },
-  "chatbot-3y": {
-    name: "AI Chatbot (3-Year Bundle)",
-    price: 1250,
-    description: "Custom AI trained on your site, 3-year hosting included",
-  },
-};
+const CHATBOT_DESCRIPTION = "Custom AI trained on your site, chat.yourdomain.com. Hosting included. One-time payment.";
 
 const CAL_LINK = process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/forwardslash/30min";
 const PAYPAL_ME_USER = "michael239";
 const PHONE_NUMBER = "619-719-5932";
 
-type AddOnId = "dns" | "ai-chatbot" | "logo" | "seo" | "blog";
+type AddOnId = "dns" | "starter" | "new-build" | "redesign";
 
-const ADD_ONS: {
-  id: AddOnId;
-  label: string;
-  price: number;
-  description: string;
-  forPlans?: PlanSlug[];
-}[] = [
+const ADD_ONS: { id: AddOnId; label: string; price: number; description: string }[] = [
   {
     id: "dns",
     label: "DNS Setup Help",
@@ -84,30 +42,22 @@ const ADD_ONS: {
     description: "We handle the DNS records for you.",
   },
   {
-    id: "ai-chatbot",
-    label: "AI Chatbot Add-On",
-    price: 799,
-    description: "Add your custom AI assistant trained on your content — answers 24/7 on chat.yourdomain.com.",
-    forPlans: ["starter"],
+    id: "starter",
+    label: "Quick WordPress Starter",
+    price: 350,
+    description: "10 clean pages, mobile-ready, basic SEO, year 1 hosting included.",
   },
   {
-    id: "logo",
-    label: "Logo Design",
-    price: 150,
-    description: "Custom logo + favicon (up to 5 concepts) to make your site look professional.",
+    id: "new-build",
+    label: "Brand New Website Build",
+    price: 1000,
+    description: "Full custom site + mobile-responsive, year 1 hosting.",
   },
   {
-    id: "seo",
-    label: "Advanced SEO",
-    price: 400,
-    description: "For existing sites: keyword research, on-page optimizations, local schema. (New sites include basic SEO.)",
-    forPlans: ["redesign", "chatbot", "chatbot-1y", "chatbot-2y", "chatbot-3y"],
-  },
-  {
-    id: "blog",
-    label: "Blog Setup",
-    price: 365,
-    description: "Full blog setup + 365 AI-generated posts ($1 per post). First-time customers only.",
+    id: "redesign",
+    label: "Website Redesign / Refresh",
+    price: 2000,
+    description: "Modern redesign, speed & SEO upgrades, year 1 hosting.",
   },
 ];
 
@@ -122,26 +72,23 @@ function CheckoutContent() {
     }
   }, [isSignedIn]);
 
-  const planSlug = (searchParams.get("plan") ?? "starter") as PlanSlug;
-  const basePlan = PLANS[planSlug] ?? PLANS.starter;
-  const pagesParam = searchParams.get("pages");
-  const pages = pagesParam ? Math.min(499, Math.max(1, parseInt(pagesParam, 10) || 25)) : null;
-  const isChatbotPlan = planSlug === "chatbot-1y" || planSlug === "chatbot-2y";
-  // Respect URL ?years=1 or ?years=2 from scan modal; otherwise 1 (only chatbot plans use years)
   const yearsParam = searchParams.get("years");
-  const years: 1 | 2 = isChatbotPlan ? (yearsParam === "2" ? 2 : 1) : 1;
-  const effectivePlanSlug: PlanSlug = isChatbotPlan ? (years === 2 ? "chatbot-2y" : "chatbot-1y") : planSlug;
-  const dynamicPrice = isChatbotPlan && pages != null ? getPriceFromPagesAndYears(pages, years) : null;
+  const years: 1 | 2 = yearsParam === "1" ? 1 : 2;
+  const effectivePlanSlug: PlanSlug = years === 2 ? "chatbot-2y" : "chatbot-1y";
+  const pagesParam = searchParams.get("pages");
+  const pages = pagesParam ? Math.min(499, Math.max(1, parseInt(pagesParam, 10) || 25)) : 25;
+  const planPrice = getPriceFromPagesAndYears(pages, years) ?? 799;
   const plan = {
-    ...(PLANS[effectivePlanSlug] ?? basePlan),
-    price: dynamicPrice ?? basePlan.price,
-    name: dynamicPrice != null ? `AI Chatbot (${years}-year, ~${pages} pages)` : basePlan.name,
+    name: `AI Chatbot — ${years}-year, ~${pages} pages`,
+    description: CHATBOT_DESCRIPTION,
+    price: planPrice,
   };
 
   const setCheckoutYears = (y: 1 | 2) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("years", String(y));
     params.set("plan", y === 2 ? "chatbot-2y" : "chatbot-1y");
+    if (!params.has("pages")) params.set("pages", String(pages));
     router.replace(`/checkout?${params.toString()}`, { scroll: false });
   };
 
@@ -163,9 +110,6 @@ function CheckoutContent() {
   const [emailTouched, setEmailTouched] = useState(false);
 
   const toggleAddOn = (id: AddOnId) => {
-    const addOn = ADD_ONS.find((a) => a.id === id);
-    if (!addOn) return;
-    if (addOn.forPlans && !addOn.forPlans.includes(effectivePlanSlug)) return;
     setAddOns((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -229,67 +173,32 @@ function CheckoutContent() {
     <section className="py-12 md:py-16 px-6">
       <div className="max-w-3xl mx-auto">
         <h1 className="font-serif text-2xl md:text-3xl text-foreground mb-2">Checkout</h1>
-        <p className="text-muted-foreground mb-8">Fill in your details, pick add-ons, and complete your order.</p>
 
-        {/* 1. Plan selector at top */}
-        <div className="mb-10">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Select your plan</h2>
-          <div className="flex flex-wrap gap-2">
-            {(["starter", "new-build", "redesign", "chatbot-1y", "chatbot-2y"] as PlanSlug[]).map((slug) => {
-              const p = PLANS[slug];
-              const isChatbot = slug === "chatbot-1y" || slug === "chatbot-2y";
-              const slugYears = slug === "chatbot-2y" ? 2 : 1;
-              const active = isChatbot ? effectivePlanSlug === slug : planSlug === slug;
-              const effectivePages = isChatbot ? (pages ?? 25) : null;
-              const buildHref = () => {
-                const params = new URLSearchParams(searchParams.toString());
-                params.set("plan", slug);
-                params.set("years", String(slugYears));
-                if (effectivePages != null) params.set("pages", String(effectivePages));
-                if (urlParam) params.set("url", urlParam);
-                return `/checkout?${params.toString()}`;
-              };
-              const displayPrice =
-                isChatbot && effectivePages != null
-                  ? getPriceFromPagesAndYears(effectivePages, slugYears)
-                  : null;
-              return (
-                <Link
-                  key={slug}
-                  href={buildHref()}
-                  className={`inline-flex px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    active ? "bg-emerald-600 text-white" : "bg-muted hover:bg-muted/80 text-foreground"
-                  }`}
-                >
-                  {p.name} — ${displayPrice ?? p.price}
-                </Link>
-              );
-            })}
-          </div>
-          {isChatbotPlan && pages != null && (
-            <div className="mt-4 flex items-center gap-3 flex-wrap">
-              <span className="text-sm text-muted-foreground">Term:</span>
-              <div className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setCheckoutYears(1)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${years === 1 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  1 year — ${getPriceFromPagesAndYears(pages, 1)?.toLocaleString() ?? "—"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCheckoutYears(2)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${years === 2 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  2 years — ${getPriceFromPagesAndYears(pages, 2)?.toLocaleString() ?? "—"}
-                </button>
-              </div>
+        {/* Plan + year toggle at top */}
+        <div className="rounded-xl border border-border bg-card p-6 mb-8">
+          <h2 className="font-serif text-lg font-medium text-foreground mb-1">AI Chatbot</h2>
+          <p className="text-sm text-muted-foreground mb-4">~{pages} pages from your site. Choose your term:</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setCheckoutYears(1)}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${years === 1 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                1 year — ${getPriceFromPagesAndYears(pages, 1)?.toLocaleString() ?? "—"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCheckoutYears(2)}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${years === 2 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                2 years — ${getPriceFromPagesAndYears(pages, 2)?.toLocaleString() ?? "—"}
+              </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* 2. Your details */}
+        {/* Your details */}
         <div className="rounded-xl border border-border bg-card p-6 mb-8">
           <h2 className="font-serif text-lg font-medium text-foreground mb-4">Your details</h2>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -396,8 +305,6 @@ function CheckoutContent() {
           <p className="text-sm text-muted-foreground mb-4">One-time add-ons — pick what fits.</p>
           <div className="space-y-3">
             {ADD_ONS.map((addOn) => {
-              const available = !addOn.forPlans || addOn.forPlans.includes(effectivePlanSlug);
-              if (!available) return null;
               const checked = addOns.has(addOn.id);
               return (
                 <label
@@ -468,7 +375,7 @@ function CheckoutContent() {
               <span className="text-xl font-bold text-foreground">${subtotal.toLocaleString()}</span>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">Year 1 hosting included. One-time payment. No monthly fees.</p>
+          <p className="text-xs text-muted-foreground mt-4">Hosting included. One-time payment. No monthly fees.</p>
 
           {detailsComplete && subtotal > 0 ? (
             <div className="mt-6">
@@ -518,10 +425,10 @@ function CheckoutContent() {
           with your business name, website URL, and order details to start setup.
         </p>
         <Link
-          href="/services"
+          href="/"
           className="block text-center text-sm text-muted-foreground hover:text-foreground"
         >
-          ← Back to services
+          ← Back to home
         </Link>
       </div>
     </section>
