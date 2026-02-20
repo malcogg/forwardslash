@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { motion, useInView } from "framer-motion";
+import { Search, Palette, Globe, CreditCard, Rocket } from "lucide-react";
 
 const MotionPath = motion.path;
-import { Search, Palette, Globe, CreditCard, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const CARDS = [
@@ -41,38 +41,32 @@ export function HowItWorks() {
           </p>
         </div>
 
-        {/* Card grid with connecting line behind it */}
-        <div className="relative">
-          {/* Connecting line: horizontal on desktop, vertical dashed on mobile; behind cards (z-0) */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            aria-hidden
-          >
-            {/* Desktop: horizontal line at center, draws left-to-right on scroll */}
-            <div className="hidden lg:block absolute inset-0 flex items-center">
-              <svg className="w-full h-2" viewBox="0 0 100 2" preserveAspectRatio="none">
-                <MotionPath
-                  d="M 0 1 L 100 1"
-                  stroke="#10b981"
-                  strokeWidth="0.5"
-                  fill="none"
-                  strokeLinecap="round"
-                  initial={{ pathLength: 0, opacity: 0.6 }}
-                  animate={inView ? { pathLength: 1, opacity: 0.8 } : { pathLength: 0, opacity: 0.6 }}
-                  transition={{ pathLength: { duration: 1.2, ease: "easeInOut" }, opacity: { duration: 0.3 } }}
-                />
-              </svg>
-            </div>
-            {/* Mobile: vertical dashed connector between stacked cards */}
-            <div className="lg:hidden absolute left-1/2 top-0 bottom-0 -translate-x-1/2 w-px" style={{ transformOrigin: "top" }}>
-              <motion.div
-                className="h-full w-px border-l-2 border-dashed border-emerald-500/60"
-                initial={{ scaleY: 0 }}
-                animate={inView ? { scaleY: 1 } : { scaleY: 0 }}
-                transition={{ duration: 1, delay: 0.2 }}
-                style={{ transformOrigin: "top" }}
+        {/* Card grid: line runs at badge height, badges overlap card tops */}
+        <div className="relative pt-6">
+          {/* Desktop: horizontal line through badge centers — behind cards, z-0 */}
+          <div className="hidden lg:block absolute left-0 right-0 top-6 h-px pointer-events-none" aria-hidden>
+            <svg className="w-full h-2 -translate-y-1/2" viewBox="0 0 100 2" preserveAspectRatio="none">
+              <MotionPath
+                d="M 0 1 L 100 1"
+                stroke="#10b981"
+                strokeWidth="0.5"
+                fill="none"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0.6 }}
+                animate={inView ? { pathLength: 1, opacity: 0.8 } : { pathLength: 0, opacity: 0.6 }}
+                transition={{ pathLength: { duration: 1.2, ease: "easeInOut" }, opacity: { duration: 0.3 } }}
               />
-            </div>
+            </svg>
+          </div>
+          {/* Mobile: vertical dashed connector */}
+          <div className="lg:hidden absolute left-1/2 top-6 bottom-0 -translate-x-1/2 w-px pointer-events-none" aria-hidden style={{ transformOrigin: "top" }}>
+            <motion.div
+              className="h-full w-px border-l-2 border-dashed border-emerald-500/60"
+              initial={{ scaleY: 0 }}
+              animate={inView ? { scaleY: 1 } : { scaleY: 0 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              style={{ transformOrigin: "top" }}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8 relative z-10">
@@ -85,17 +79,15 @@ export function HowItWorks() {
                   variants={cardVariants}
                   initial="hidden"
                   animate={inView ? "visible" : "hidden"}
-                  className="group bg-card rounded-xl p-6 md:p-8 border border-border shadow-sm
+                  className="group relative bg-card rounded-xl pt-12 pb-6 px-6 md:pt-14 md:pb-8 md:px-8 border border-border shadow-sm
                     transition-all duration-300 hover:scale-[1.03] hover:shadow-md hover:shadow-emerald-500/10"
                 >
-                  {/* Step number in brand circle + icon */}
-                  <div className="flex flex-col items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shrink-0">
-                      {card.step}
-                    </div>
-                    <div className="w-14 h-14 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground">
-                      <Icon className="w-7 h-7" />
-                    </div>
+                  {/* Badge: overlaps top of card, center aligns with connecting line */}
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shrink-0 ring-4 ring-background">
+                    {card.step}
+                  </div>
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground">
+                    <Icon className="w-7 h-7" />
                   </div>
                   <h3 className="text-xl font-semibold text-foreground text-center mb-3">
                     {card.title}
