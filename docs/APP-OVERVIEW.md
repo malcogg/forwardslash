@@ -163,9 +163,9 @@ ADMIN_EMAILS=
 
 | Tier | 1 Year | 2 Years |
 |------|--------|---------|
-| < 50 pages | $550 | $850 |
-| 50–200 pages | $550 → $1,980 (linear) | 2yr multiplier |
-| 200–500 pages | $1,980 → $3,200 (linear) | 2yr multiplier |
+| Up to 50 pages | $799 | $1,099 |
+| 51–200 pages | $1,499 | $2,099 |
+| 201–500 pages | $2,999 | $3,999 |
 | 500+ | Contact us | Contact us |
 
 Add-ons: DNS help +$99, AI chatbot (Starter plan), Advanced SEO, Logo, Blog.
@@ -180,6 +180,7 @@ Add-ons: DNS help +$99, AI chatbot (Starter plan), Advanced SEO, Logo, Blog.
 - [SECURITY-AND-API-AUDIT.md](./SECURITY-AND-API-AUDIT.md) – Security audit, endpoint auth, action items
 - [FIRST-ORDER-READINESS.md](./FIRST-ORDER-READINESS.md) – Pre-launch checklist
 - [PRODUCTION-READINESS-CHECKLIST.md](./PRODUCTION-READINESS-CHECKLIST.md) – DONE vs TODO (may be outdated)
+- [APP-FLOW-AND-AUDIT.md](./APP-FLOW-AND-AUDIT.md) – Full flow, triggers, audit checklist
 - [APP-STATE-AND-AUTOMATION-PLAN.md](./APP-STATE-AND-AUTOMATION-PLAN.md) – Automation details
 - [DEV-WORKFLOW-MANUAL-FULFILLMENT.md](./DEV-WORKFLOW-MANUAL-FULFILLMENT.md) – Fulfillment SOP
 - [INVESTOR-PITCH.md](./INVESTOR-PITCH.md) – Investor overview

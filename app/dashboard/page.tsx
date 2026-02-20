@@ -124,7 +124,7 @@ function DashboardContent() {
     contentCount?: number;
   } | null>(null);
   const [myOrders, setMyOrders] = useState<{
-    order: { id: string };
+    order: { id: string; status?: string };
     customer: { businessName: string; websiteUrl: string } | null;
     contentCount: number;
     estimatedPages: number;
@@ -417,8 +417,18 @@ function DashboardContent() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
+          {myOrders.some((o) => o.order.status === "paid") && (
+            <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">PRO</span>
+          )}
           <ThemeToggle />
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-1">
+            <UserButton afterSignOutUrl="/" />
+            {myOrders.some((o) => o.order.status === "paid") && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white" title="Verified customer">
+                <Check className="h-3 w-3" strokeWidth={2.5} />
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

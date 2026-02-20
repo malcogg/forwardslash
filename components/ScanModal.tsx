@@ -89,6 +89,7 @@ export function ScanModal({ open, onClose, url, onScanComplete, origin = "homepa
   const [retryKey, setRetryKey] = useState(0);
   const [scanId, setScanId] = useState<string | null>(null);
   const [scannedAt, setScannedAt] = useState<string | null>(null);
+  const [yearsModal, setYearsModal] = useState<1 | 2>(2);
 
   const effectiveUrl = url || enteredUrl;
   const displayUrl = effectiveUrl ? effectiveUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : "";
@@ -457,21 +458,46 @@ export function ScanModal({ open, onClose, url, onScanComplete, origin = "homepa
                   )}
                   {origin === "homepage" && (() => {
                     const pages = roastData?.estimatedPages ?? 25;
-                    const price = getPriceFromPagesAndYears(pages, 2);
-                    const checkoutHref = `/checkout?plan=chatbot-2y&pages=${pages}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}`;
+                    const price = getPriceFromPagesAndYears(pages, yearsModal);
+                    const planSlug = yearsModal === 2 ? "chatbot-2y" : "chatbot-1y";
+                    const checkoutHref = `/checkout?plan=${planSlug}&pages=${pages}&years=${yearsModal}${effectiveUrl ? `&url=${encodeURIComponent(effectiveUrl)}` : ""}`;
                     return (
-                      <Link
-                        href={price !== null ? checkoutHref : "/#pricing"}
-                        onClick={() => {
-                          handleContinueToScan();
-                          saveLastScan(effectiveUrl, pages, displayUrl);
-                        }}
-                        className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
-                      >
-                        {price !== null
-                          ? `Pay $${price.toLocaleString()} (2-yr, ~${pages} pages) →`
-                          : `~${pages} pages — Contact us`}
-                      </Link>
+                      <div className="flex flex-col gap-3 w-full sm:w-auto">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm text-muted-foreground">Term:</span>
+                          <div className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setYearsModal(1)}
+                              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${yearsModal === 1 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              1 year
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setYearsModal(2)}
+                              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${yearsModal === 2 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                            >
+                              2 years
+                            </button>
+                          </div>
+                          <span className="text-sm text-muted-foreground">
+                            {price !== null ? `$${price.toLocaleString()}` : "Contact us"}
+                          </span>
+                        </div>
+                        <Link
+                          href={price !== null ? checkoutHref : "/#pricing"}
+                          onClick={() => {
+                            handleContinueToScan();
+                            saveLastScan(effectiveUrl, pages, displayUrl);
+                          }}
+                          className="py-2.5 px-4 text-center text-sm font-medium rounded-2xl rounded-bl-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors"
+                        >
+                          {price !== null
+                            ? `Pay $${price.toLocaleString()} (${yearsModal}-yr, ~${pages} pages) →`
+                            : `~${pages} pages — Contact us`}
+                        </Link>
+                      </div>
                     );
                   })()}
                 </div>

@@ -1,8 +1,6 @@
-# ForwardSlash.Chat - Pricing and Bundles
+# ForwardSlash.Chat – Pricing and Bundles
 
-This document defines the official pricing, bundle logic, renewal terms, and
-the DNS setup add-on. Use this as the single source of truth for sales pages,
-checkout, emails, and internal ops.
+Single source of truth for pricing, tiers, renewal, and the DNS add-on. Use for sales copy, checkout, emails, and internal ops.
 
 **Last updated:** February 2026
 
@@ -10,27 +8,30 @@ checkout, emails, and internal ops.
 
 ## Simple pricing
 
-One upfront payment. Hosting included. Renewal optional at $495/year after.
+One upfront payment. Hosting included. Renewal optional after prepaid period (see app for current rate).
 
 ---
 
-## Bundles (official)
+## Page-based tiers (AI Chatbot)
 
-| Bundle         | Price   | Prepaid period | Renewal after | Notes                    |
-|----------------|---------|----------------|---------------|--------------------------|
-| 1-Year Starter | $550    | 1 year         | $495/year     | First year included      |
-| 2-Year Bundle  | $850    | 2 years        | $495/year     | **Recommended** – saves $190 |
-| 3-Year Bundle  | $1,250  | 3 years        | $495/year     |                          |
+Price is determined by site size (page count from scan). Customer chooses 1 or 2 years.
 
-Recommended default: 2-Year Bundle ($850).
+| Tier | 1 Year | 2 Years |
+|------|--------|--------|
+| Up to 50 pages | $799 | $1,099 |
+| 51–200 pages | $1,499 | $2,099 |
+| 201–500 pages | $2,999 | $3,999 |
+| 500+ pages | Contact us | Contact us |
+
+**Recommended:** 2-year option (better value). Default in app: 2-year.
 
 ---
 
 ## What's included (all tiers)
 
-- **Up to 50 pages** crawled and trained on your content
+- **Up to 50 pages** (or tier limit) crawled and trained on your content
 - AI trained on your content
-- Hosting included
+- Hosting included for prepaid period
 - Your domain (chat.yoursite.com or yoursite.com/chat)
 - No monthly fees
 
@@ -46,8 +47,8 @@ Recommended default: 2-Year Bundle ($850).
 
 ## Renewal (post-prepaid)
 
-- Renewal is optional at $495/year
-- Renewal price is subject to change for future years
+- Renewal is optional after the prepaid period
+- Renewal price subject to change; see app or admin for current rate
 - Send renewal reminder ~30 days before prepaid end
 
 ---
@@ -55,23 +56,22 @@ Recommended default: 2-Year Bundle ($850).
 ## Messaging (customer-facing)
 
 - "One upfront payment, no monthly fees"
-- "Hosting and maintenance included for your prepaid period"
+- "Hosting included for your prepaid period"
 - "Renewal is optional after your prepaid term"
-- "Recommended: 2-Year Bundle – Save $190"
-- "Up to 50 pages included"
+- "Recommended: 2-year – best value"
+- "Up to 50 pages" (or "51–200", "201–500" per tier)
 
 ---
 
 ## Scan → tier mapping
 
-When the user scans their site, page count determines which tier to pre-select. Customer sees "Your Price" without having to choose.
+Page count from roast/scan drives the tier. Customer sees "Your Price" for their tier.
 
-| Page count   | Tier     |
-|--------------|----------|
-| Under 300    | Small    |
-| 300–1,000    | Medium   |
-| 1,000–5,000  | Large    |
-| 5,000+       | Enterprise (Contact us) |
-| Scan failed  | Default to Small or "Contact us" |
+| Page count | Tier | 1yr | 2yr |
+|------------|------|-----|-----|
+| 1–50 | Up to 50 pages | $799 | $1,099 |
+| 51–200 | 51–200 pages | $1,499 | $2,099 |
+| 201–499 | 201–500 pages | $2,999 | $3,999 |
+| 500+ | Contact us | — | — |
 
-Default recommendation for Small/Medium: 2-Year Bundle ($850).
+Default recommendation: 2-year.

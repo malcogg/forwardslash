@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { Header } from "@/components/landing/Header";
@@ -113,6 +113,7 @@ const ADD_ONS: {
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { isSignedIn } = useUser();
 
   useEffect(() => {
@@ -126,12 +127,24 @@ function CheckoutContent() {
   const pagesParam = searchParams.get("pages");
   const pages = pagesParam ? Math.min(499, Math.max(1, parseInt(pagesParam, 10) || 25)) : null;
   const isChatbotPlan = planSlug === "chatbot-1y" || planSlug === "chatbot-2y";
-  const years = planSlug === "chatbot-2y" ? 2 : 1;
-  const dynamicPrice = isChatbotPlan && pages != null ? getPriceFromPagesAndYears(pages, years as 1 | 2) : null;
+  // Respect URL ?years=1 or ?years=2 from scan modal; otherwise derive from plan slug
+  const yearsParam = searchParams.get("years");
+  const years: 1 | 2 = isChatbotPlan
+    ? (yearsParam === "2" ? 2 : 1)
+    : (planSlug === "chatbot-2y" ? 2 : 1);
+  const effectivePlanSlug: PlanSlug = isChatbotPlan ? (years === 2 ? "chatbot-2y" : "chatbot-1y") : planSlug;
+  const dynamicPrice = isChatbotPlan && pages != null ? getPriceFromPagesAndYears(pages, years) : null;
   const plan = {
-    ...basePlan,
+    ...(PLANS[effectivePlanSlug] ?? basePlan),
     price: dynamicPrice ?? basePlan.price,
     name: dynamicPrice != null ? `AI Chatbot (${years}-year, ~${pages} pages)` : basePlan.name,
+  };
+
+  const setCheckoutYears = (y: 1 | 2) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("years", String(y));
+    params.set("plan", y === 2 ? "chatbot-2y" : "chatbot-1y");
+    router.replace(`/checkout?${params.toString()}`, { scroll: false });
   };
 
   const urlParam = searchParams.get("url") ?? searchParams.get("websiteUrl");
@@ -154,7 +167,7 @@ function CheckoutContent() {
   const toggleAddOn = (id: AddOnId) => {
     const addOn = ADD_ONS.find((a) => a.id === id);
     if (!addOn) return;
-    if (addOn.forPlans && !addOn.forPlans.includes(planSlug)) return;
+    if (addOn.forPlans && !addOn.forPlans.includes(effectivePlanSlug)) return;
     setAddOns((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -199,7 +212,7 @@ function CheckoutContent() {
           businessName: sanitizeBusinessName(businessName),
           domain: sanitizeDomain(domain),
           websiteUrl: sanitizeWebsiteUrl(websiteUrl),
-          planSlug,
+          planSlug: effectivePlanSlug,
           addOns: Array.from(addOns),
           amountCents: Math.round(subtotal * 100),
         }),
@@ -226,19 +239,21 @@ function CheckoutContent() {
           <div className="flex flex-wrap gap-2">
             {(["starter", "new-build", "redesign", "chatbot-1y", "chatbot-2y"] as PlanSlug[]).map((slug) => {
               const p = PLANS[slug];
-              const active = planSlug === slug;
               const isChatbot = slug === "chatbot-1y" || slug === "chatbot-2y";
+              const slugYears = slug === "chatbot-2y" ? 2 : 1;
+              const active = isChatbot ? effectivePlanSlug === slug : planSlug === slug;
               const effectivePages = isChatbot ? (pages ?? 25) : null;
               const buildHref = () => {
-                const params = new URLSearchParams();
+                const params = new URLSearchParams(searchParams.toString());
                 params.set("plan", slug);
+                params.set("years", String(slugYears));
                 if (effectivePages != null) params.set("pages", String(effectivePages));
                 if (urlParam) params.set("url", urlParam);
                 return `/checkout?${params.toString()}`;
               };
               const displayPrice =
                 isChatbot && effectivePages != null
-                  ? getPriceFromPagesAndYears(effectivePages, slug === "chatbot-2y" ? 2 : 1)
+                  ? getPriceFromPagesAndYears(effectivePages, slugYears)
                   : null;
               return (
                 <Link
@@ -253,6 +268,27 @@ function CheckoutContent() {
               );
             })}
           </div>
+          {isChatbotPlan && pages != null && (
+            <div className="mt-4 flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-muted-foreground">Term:</span>
+              <div className="inline-flex rounded-lg border border-border bg-muted/50 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setCheckoutYears(1)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${years === 1 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  1 year — ${getPriceFromPagesAndYears(pages, 1)?.toLocaleString() ?? "—"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCheckoutYears(2)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${years === 2 ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  2 years — ${getPriceFromPagesAndYears(pages, 2)?.toLocaleString() ?? "—"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 2. Your details */}
@@ -362,7 +398,7 @@ function CheckoutContent() {
           <p className="text-sm text-muted-foreground mb-4">One-time add-ons — pick what fits.</p>
           <div className="space-y-3">
             {ADD_ONS.map((addOn) => {
-              const available = !addOn.forPlans || addOn.forPlans.includes(planSlug);
+              const available = !addOn.forPlans || addOn.forPlans.includes(effectivePlanSlug);
               if (!available) return null;
               const checked = addOns.has(addOn.id);
               return (

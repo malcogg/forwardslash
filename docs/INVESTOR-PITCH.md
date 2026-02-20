@@ -31,12 +31,12 @@ We crawl the site, train the AI, host it, and handle DNS—businesses get a bran
 
 | Revenue | How |
 |---------|-----|
-| **AI Chatbot bundles** | Page-based tiers: $550–$3,200 one-time (1–2 years hosting) |
+| **AI Chatbot** | Page-based tiers: $799–$3,999 one-time (1–2 years hosting) |
 | **Add-ons** | DNS setup +$99, Advanced SEO, Logo, Blog |
-| **Renewals** | Optional $495/year after prepaid period |
+| **Renewals** | Optional after prepaid period |
 
 **Unit economics (example):**  
-- 2-year bundle ~$850 → ~$425/year effective  
+- 2-year mid-tier ~$2,099 → ~$1,050/year effective  
 - Fulfillment target: &lt;4 hours per customer  
 - Margins improve as automation reduces manual work  
 
@@ -60,7 +60,7 @@ We crawl the site, train the AI, host it, and handle DNS—businesses get a bran
 
 ### Built (MVP)
 - Landing page with scan/roast (page estimate before sign-up)
-- Page-based pricing ($550–$3,200 tiers)
+- Page-based pricing ($799–$3,999 tiers)
 - Checkout + lead capture → PayPal (Stripe ready)
 - Clerk auth, customer dashboard
 - Firecrawl integration (crawl → content for chat)

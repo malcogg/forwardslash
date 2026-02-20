@@ -34,7 +34,7 @@
   "to": "customer@example.com",
   "businessName": "Acme Co",
   "planName": "AI Chatbot (2-year)",
-  "total": "$850"
+  "total": "$1,099"
 }
 ```
 
