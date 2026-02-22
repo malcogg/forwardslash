@@ -549,14 +549,6 @@ function DashboardContent() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setMobileSheetOpen(true)}
-            className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
           {myOrders.some((o) => o.order.status === "paid") && (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">PRO</span>
@@ -849,9 +841,13 @@ function DashboardContent() {
                   <p className="text-sm text-muted-foreground">
                     Welcome, {displayName}. Get your AI chatbot by completing checkout.
                   </p>
-                  <Link href="/" className="block w-full px-3 py-2 text-sm text-center border border-border rounded hover:bg-muted">
+                  <button
+                    type="button"
+                    onClick={() => setScanNewSiteModalOpen(true)}
+                    className="block w-full px-3 py-2 text-sm text-center border border-border rounded hover:bg-muted"
+                  >
                     Scan your site
-                  </Link>
+                  </button>
                   <Link href="/checkout?plan=chatbot-2y&pages=25" className="block w-full px-3 py-2 text-sm text-center bg-primary text-primary-foreground rounded hover:opacity-90">
                     Get started →
                   </Link>
