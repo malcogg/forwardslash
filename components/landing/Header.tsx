@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, useUser, useClerk } from "@clerk/nextjs";
 import { LayoutDashboard, LogOut, Menu, X, Bell } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { isBannerExcluded } from "@/components/landing/AnnouncementBannerSitewide";
 
 function getInitials(user: { firstName?: string | null; lastName?: string | null; fullName?: string | null } | null | undefined) {
   if (!user) return "?";
@@ -137,9 +139,14 @@ export function Header({
     };
   }, [mobileDrawerOpen]);
 
+  const pathname = usePathname() ?? "";
+  const showBanner = !isBannerExcluded(pathname);
+
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 w-full backdrop-blur-xl bg-background/70 dark:bg-background/80 border-b border-border/40 shadow-sm">
+      <header
+        className={`fixed left-0 right-0 z-50 w-full backdrop-blur-xl bg-background/70 dark:bg-background/80 border-b border-border/40 shadow-sm ${showBanner ? "top-10" : "top-0"}`}
+      >
         <div className="w-full py-4 px-6 flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/" className="text-xl font-bold text-foreground lowercase shrink-0">
             forwardslash.chat
@@ -278,7 +285,7 @@ export function Header({
         </div>
       )}
 
-      <div className="h-16 shrink-0" aria-hidden />
+      <div className={showBanner ? "h-[6.5rem] shrink-0" : "h-16 shrink-0"} aria-hidden />
     </>
   );
 }

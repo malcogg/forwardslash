@@ -3,14 +3,23 @@
 import { usePathname } from "next/navigation";
 import { AnnouncementBanner } from "./AnnouncementBanner";
 
-const EXCLUDED_PATHS = ["/dashboard", "/checkout"];
+export const BANNER_EXCLUDED_PATHS = ["/dashboard", "/checkout"];
 
-function isExcluded(pathname: string): boolean {
-  return EXCLUDED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+export function isBannerExcluded(pathname: string): boolean {
+  return BANNER_EXCLUDED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
+
+export const BANNER_HEIGHT_REM = 2.5; // ~40px, match banner min-height
 
 export function AnnouncementBannerSitewide() {
   const pathname = usePathname() ?? "";
-  if (isExcluded(pathname)) return null;
-  return <AnnouncementBanner />;
+  if (isBannerExcluded(pathname)) return null;
+  return (
+    <div
+      className="sticky top-0 z-[60] min-h-[2.5rem] flex items-center justify-center shrink-0"
+      style={{ minHeight: `${BANNER_HEIGHT_REM}rem` }}
+    >
+      <AnnouncementBanner />
+    </div>
+  );
 }
