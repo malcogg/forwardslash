@@ -41,7 +41,7 @@ function bundleYearsFromPlanSlug(planSlug: string): number {
 
 function planNameFromSlug(planSlug: string): string {
   const map: Record<string, string> = {
-    "starter-bot": "Starter Bot — 5 pages, 1 year",
+    "starter-bot": "Starter — 5 pages, 1 year",
     "chatbot-1y": "AI Chatbot (1 year)",
     "chatbot-2y": "AI Chatbot (2 years)",
     "chatbot-3y": "AI Chatbot (3 years)",

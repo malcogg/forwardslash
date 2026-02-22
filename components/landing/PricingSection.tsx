@@ -25,9 +25,9 @@ const STARTER_BOT_FEATURES = [
 ] as const;
 
 const TIERS = [
-  { key: "starter-bot", name: "Starter Bot", pages: "Up to 5 pages", pageCount: 5, fixedPrice: 129, years: 1 as const, popular: false, features: STARTER_BOT_FEATURES },
-  { key: "starter", name: "Starter", pages: "Up to 50 pages", pageCount: 25, popular: false, features: FEATURES },
-  { key: "growth", name: "Growth", pages: "51–200 pages", pageCount: 125, popular: true, features: FEATURES },
+  { key: "starter-bot", name: "Starter", pages: "Up to 5 pages", pageCount: 5, fixedPrice: 129, years: 1 as const, popular: false, features: STARTER_BOT_FEATURES },
+  { key: "growth", name: "Growth", pages: "Up to 50 pages", pageCount: 50, popular: false, features: FEATURES },
+  { key: "essential", name: "Essential", pages: "51–200 pages", pageCount: 125, popular: true, features: FEATURES },
   { key: "pro", name: "Pro", pages: "201–500+ pages", pageCount: 350, popular: false, features: FEATURES },
 ] as const;
 

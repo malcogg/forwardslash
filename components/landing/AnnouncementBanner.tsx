@@ -7,7 +7,7 @@ export function AnnouncementBanner() {
     <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2.5 text-center text-sm text-foreground">
       <span className="font-medium">Limited time only</span>
       {" — "}
-      <span>Starter Bot for $129</span>
+      <span>Starter for $129</span>
       {" — "}
       AI chatbot for very small sites (up to 5 pages), 1 year included.
       {" "}

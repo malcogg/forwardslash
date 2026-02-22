@@ -114,7 +114,7 @@ function CheckoutContent() {
 
   const plan = isStarterBot
     ? {
-        name: "Starter Bot — 5 pages, 1 year",
+        name: "Starter — 5 pages, 1 year",
         description: "AI chatbot for very small sites. Company info, hours, contact. 1 year hosting included.",
         price: 129,
       }
@@ -235,12 +235,12 @@ function CheckoutContent() {
         <div className="rounded-xl border border-border bg-card p-6 mb-8">
           {isStarterBot ? (
             <>
-              <h2 className="font-serif text-lg font-medium text-foreground mb-1">Starter Bot</h2>
+              <h2 className="font-serif text-lg font-medium text-foreground mb-1">Starter</h2>
               <p className="text-sm text-muted-foreground mb-2">
                 $129 — AI chatbot for very small sites (up to 5 pages). 1 year hosting included.
               </p>
               <p className="text-sm font-medium text-foreground">
-                <strong>Starter Bot — 5 pages, 1 year</strong> — $129
+                <strong>Starter — 5 pages, 1 year</strong> — $129
               </p>
               <Link href="/#pricing" className="text-sm text-primary hover:underline mt-2 inline-block">
                 View all plans →
