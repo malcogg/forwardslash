@@ -6,10 +6,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { PENDING_SCAN_URL_KEY } from "@/components/ScanModal";
 import { UserButton, useUser, useAuth } from "@clerk/nextjs";
-import { Globe, Check, ChevronDown, X, Monitor, Tablet, Smartphone, Copy, ExternalLink, Trash2, Bell, Lock } from "lucide-react";
+import { Globe, Check, ChevronDown, X, Monitor, Tablet, Smartphone, Copy, ExternalLink, Trash2, Bell, Lock, Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CustomerChat } from "@/components/CustomerChat";
 import { ScanModal } from "@/components/ScanModal";
+import { DashboardMobileSheet, type MobileSheetPanel } from "@/components/DashboardMobileSheet";
 import { getPriceFromPagesAndYears } from "@/lib/pricing";
 
 function getDisplayName(user: { firstName?: string | null; lastName?: string | null; fullName?: string | null } | null | undefined): string {
@@ -141,11 +142,18 @@ function DashboardContent() {
   const initials = getInitials(displayName);
 
   const [activePanel, setActivePanel] = useState<"design" | "domains">("design");
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<MobileSheetPanel>("design");
   const [scanDropdownOpen, setScanDropdownOpen] = useState(false);
   const [scanNewSiteModalOpen, setScanNewSiteModalOpen] = useState(false);
   const [upsellModalOpen, setUpsellModalOpen] = useState(false);
   const [previewView, setPreviewView] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const scanDropdownRef = useRef<HTMLDivElement>(null);
+
+  const setMobilePanel = (panel: MobileSheetPanel) => {
+    setMobileView(panel);
+    if (panel === "design" || panel === "domains") setActivePanel(panel);
+  };
 
   useEffect(() => {
     if (!scanDropdownOpen) return;
@@ -541,6 +549,14 @@ function DashboardContent() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileSheetOpen(true)}
+            className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">← Home</Link>
           {myOrders.some((o) => o.order.status === "paid") && (
             <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">PRO</span>
@@ -600,8 +616,8 @@ function DashboardContent() {
       </div>
 
       <div className="flex h-[calc(100vh-52px)]">
-        {/* Sidebar */}
-        <aside className="w-56 border-r border-border bg-muted/20 p-4 flex flex-col shrink-0">
+        {/* Sidebar - hidden on mobile (use bottom sheet instead) */}
+        <aside className="hidden md:flex w-56 border-r border-border bg-muted/20 p-4 flex-col shrink-0">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
               <span className="text-primary-foreground text-xs font-medium">{initials}</span>
@@ -769,8 +785,12 @@ function DashboardContent() {
           </div>
         </aside>
 
-        {/* Center panel: Design | Domains */}
-        <div className={`border-r border-border overflow-y-auto shrink-0 flex flex-col ${activePanel === "design" ? "w-64" : "min-w-[280px] flex-1 max-w-md"}`}>
+        {/* Center panel: Design | Domains - on mobile full width, hidden when showing preview */}
+        <div
+          className={`border-r border-border overflow-y-auto shrink-0 flex flex-col flex-1 min-w-0 ${
+            activePanel === "design" ? "md:w-64" : "md:min-w-[280px] md:max-w-md"
+          } ${mobileView === "preview" ? "max-md:hidden" : ""}`}
+        >
           {successToast && (
             <div className="flex items-center justify-between gap-4 p-4 bg-emerald-500/15 border-b border-emerald-500/30 shrink-0">
               <p className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -792,7 +812,7 @@ function DashboardContent() {
               </div>
             </div>
           )}
-          <div className={`flex-1 overflow-y-auto ${activePanel === "design" ? "p-4" : "p-6"}`}>
+          <div className={`flex-1 overflow-y-auto max-md:pb-24 ${activePanel === "design" ? "p-4" : "p-6"}`}>
           {activePanel === "design" && (
             <>
               {hasOrder && !isPaid && contentCount > 0 && !isWebsiteOrder && (
@@ -1032,8 +1052,12 @@ function DashboardContent() {
           </div>
         </div>
 
-        {/* Chat preview / Website order summary */}
-        <div className="flex-1 min-w-[320px] p-4 flex flex-col bg-muted/10">
+        {/* Chat preview / Website order summary - on mobile full width when selected from sheet */}
+        <div
+          className={`flex-1 min-w-0 md:min-w-[320px] p-4 flex flex-col bg-muted/10 max-md:pb-24 ${
+            mobileView === "preview" ? "max-md:flex" : "max-md:hidden"
+          }`}
+        >
           {isWebsiteOrder ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full">
@@ -1108,6 +1132,42 @@ function DashboardContent() {
           )}
         </div>
       </div>
+
+      {/* Mobile bottom bar - open sheet */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 flex items-center justify-center py-3 px-4 bg-background/95 backdrop-blur border-t border-border safe-area-pb">
+        <button
+          type="button"
+          onClick={() => setMobileSheetOpen(true)}
+          className="w-full max-w-sm flex items-center justify-center gap-2 py-3 px-6 rounded-xl bg-primary text-primary-foreground font-medium hover:opacity-90 active:opacity-80 transition-opacity"
+        >
+          <Menu className="w-5 h-5" />
+          Menu
+        </button>
+      </div>
+
+      {/* Mobile: spacer so content isn't hidden behind bottom bar */}
+      <div className="md:hidden h-16 shrink-0" aria-hidden />
+
+      {/* Mobile bottom sheet */}
+      <DashboardMobileSheet
+        open={mobileSheetOpen}
+        onClose={() => setMobileSheetOpen(false)}
+        onSelectPanel={setMobilePanel}
+        onSelectOrder={(id) => {
+          router.replace(`/dashboard?orderId=${encodeURIComponent(id)}`);
+        }}
+        onScanNewSite={() => setScanNewSiteModalOpen(true)}
+        orders={myOrders.map(({ order, customer }) => ({
+          orderId: order.id,
+          label: customer?.websiteUrl?.replace(/^https?:\/\//, "").replace(/\/$/, "") ?? customer?.businessName ?? "Order",
+          isWebsite: order.planSlug ? ["starter", "new-build", "redesign"].includes(order.planSlug) : false,
+        }))}
+        activePanel={activePanel}
+        contentCount={contentCount}
+        domainDone={["testing", "delivered"].includes(customer?.status ?? "")}
+        domainLocked={!isWebsiteOrder && (contentCount ?? 0) === 0}
+        currentOrderId={orderId}
+      />
 
       {/* Upsell modal */}
       {upsellModalOpen && (

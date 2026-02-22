@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SignedIn, SignedOut, useUser, useClerk } from "@clerk/nextjs";
 import { LayoutDashboard, LogOut, Menu, X, Bell } from "lucide-react";
@@ -145,9 +146,11 @@ export function Header({
   return (
     <>
       <header
-        className={`fixed left-0 right-0 z-50 w-full backdrop-blur-xl bg-background/70 dark:bg-background/80 border-b border-border/40 shadow-sm ${showBanner ? "top-10" : "top-0"}`}
+        className={`fixed left-0 right-0 z-50 w-full backdrop-blur-xl bg-background/70 dark:bg-background/80 border-b border-border/40 shadow-sm transition-[top] duration-200 ${
+          showBanner ? "top-[3.5rem] md:top-10" : "top-0"
+        }`}
       >
-        <div className="w-full py-4 px-6 flex items-center justify-between max-w-7xl mx-auto">
+        <div className="w-full py-3 px-4 sm:py-4 sm:px-6 flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/" className="text-xl font-bold text-foreground lowercase shrink-0">
             forwardslash.chat
           </Link>
@@ -227,65 +230,78 @@ export function Header({
         </div>
       </header>
 
-      {/* Mobile drawer for signed-out users - custom slide-in, no vaul */}
-      {mobileDrawerOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setMobileDrawerOpen(false)}
-            onKeyDown={(e) => e.key === "Escape" && setMobileDrawerOpen(false)}
-          />
-          <div
-            className="absolute right-0 top-0 bottom-0 w-[280px] max-w-[85vw] bg-background border-l border-border flex flex-col shadow-xl transition-transform duration-200 ease-out"
-          >
-            <div className="p-6 flex items-center justify-between border-b border-border shrink-0">
-              <span className="font-bold text-foreground">Menu</span>
-              <button
-                onClick={() => setMobileDrawerOpen(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-accent text-muted-foreground"
-                aria-label="Close menu"
-                type="button"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <nav className="flex-1 p-6 flex flex-col gap-1 overflow-auto">
-              {guestNavLinks.map(({ href, label, cta }) =>
-                href.startsWith("/") && !href.startsWith("/#") ? (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={() => setMobileDrawerOpen(false)}
-                    className={`py-3 px-4 rounded-lg text-foreground hover:bg-accent transition-colors block ${
-                      cta ? "font-medium" : ""
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                ) : (
-                  <a
-                    key={href}
-                    href={href}
-                    onClick={() => setMobileDrawerOpen(false)}
-                    className="py-3 px-4 rounded-lg text-foreground hover:bg-accent transition-colors block"
-                  >
-                    {label}
-                  </a>
-                )
-              )}
-            </nav>
-            <div className="p-6 border-t border-border shrink-0">
-              <Link href="/sign-up" onClick={() => setMobileDrawerOpen(false)} className="block">
-                <Button variant="cta" size="sm" className="w-full">
-                  Get started
-                </Button>
-              </Link>
-            </div>
+      {/* Mobile bottom sheet for signed-out users */}
+      <AnimatePresence>
+        {mobileDrawerOpen && (
+          <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setMobileDrawerOpen(false)}
+              onKeyDown={(e) => e.key === "Escape" && setMobileDrawerOpen(false)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "tween", duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+              className="absolute left-0 right-0 bottom-0 rounded-t-2xl bg-background border-t border-border shadow-2xl flex flex-col max-h-[80vh]"
+            >
+              <div className="p-4 flex items-center justify-between border-b border-border shrink-0">
+                <span className="font-bold text-foreground text-lg">Menu</span>
+                <button
+                  onClick={() => setMobileDrawerOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-accent text-muted-foreground touch-manipulation"
+                  aria-label="Close menu"
+                  type="button"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <nav className="flex-1 p-4 flex flex-col gap-1 overflow-auto">
+                {guestNavLinks.map(({ href, label, cta }) =>
+                  href.startsWith("/") && !href.startsWith("/#") ? (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setMobileDrawerOpen(false)}
+                      className={`py-4 px-4 rounded-xl text-foreground hover:bg-accent active:bg-accent transition-colors block text-base touch-manipulation ${
+                        cta ? "font-semibold" : ""
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={href}
+                      href={href}
+                      onClick={() => setMobileDrawerOpen(false)}
+                      className="py-4 px-4 rounded-xl text-foreground hover:bg-accent active:bg-accent transition-colors block text-base touch-manipulation"
+                    >
+                      {label}
+                    </a>
+                  )
+                )}
+              </nav>
+              <div className="p-4 border-t border-border shrink-0 safe-area-pb">
+                <Link href="/sign-up" onClick={() => setMobileDrawerOpen(false)} className="block">
+                  <Button variant="cta" size="lg" className="w-full py-6 text-base">
+                    Get started
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
-      <div className={showBanner ? "h-[6.5rem] shrink-0" : "h-16 shrink-0"} aria-hidden />
+      <div
+        className={`shrink-0 ${showBanner ? "h-[7.5rem] md:h-[6.5rem]" : "h-14 md:h-16"} transition-[height] duration-200`}
+        aria-hidden
+      />
     </>
   );
 }

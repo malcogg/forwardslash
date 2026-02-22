@@ -15,10 +15,7 @@ export function AnnouncementBannerSitewide() {
   const pathname = usePathname() ?? "";
   if (isBannerExcluded(pathname)) return null;
   return (
-    <div
-      className="sticky top-0 z-[60] min-h-[2.5rem] flex items-center justify-center shrink-0"
-      style={{ minHeight: `${BANNER_HEIGHT_REM}rem` }}
-    >
+    <div className="sticky top-0 z-[60] min-h-[3.5rem] md:min-h-[2.5rem] flex items-center justify-center shrink-0 w-full">
       <AnnouncementBanner />
     </div>
   );

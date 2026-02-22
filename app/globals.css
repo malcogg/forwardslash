@@ -97,6 +97,18 @@ html {
   html {
     overflow-x: hidden;
   }
+
+  /* Mobile: prevent over-small text, improve tap targets */
+  @media (max-width: 768px) {
+    body {
+      -webkit-text-size-adjust: 100%;
+    }
+  }
+}
+
+/* Safe area for notched devices (e.g. iPhone) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* Minimal scrollbar - ai-chatbot style */

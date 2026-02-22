@@ -1,5 +1,5 @@
 // ForwardSlash.Chat – AI chatbot builder
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -16,19 +16,34 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://forwardslash.chat";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "ForwardSlash.Chat - AI Chatbot for Your Website",
-  description: "One-time payment. Your own AI assistant. No monthly fees.",
+  title: {
+    default: "ForwardSlash.Chat — AI Chatbot for Your Website",
+    template: "%s | ForwardSlash.Chat",
+  },
+  description:
+    "Get an AI chatbot trained on your site. One-time payment, hosting included. No monthly fees. From Starter ($129) to Pro. chat.yourdomain.com in minutes.",
+  keywords: ["AI chatbot", "website chatbot", "one-time payment", "no monthly fees", "chat.yourdomain.com", "small business"],
   openGraph: {
-    title: "ForwardSlash.Chat - AI Chatbot for Your Website",
+    title: "ForwardSlash.Chat — AI Chatbot for Your Website",
     description: "One-time payment. Your own AI assistant. No monthly fees.",
+    url: siteUrl,
+    siteName: "ForwardSlash.Chat",
     images: ["/og-image.png"],
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ForwardSlash.Chat - AI Chatbot for Your Website",
+    title: "ForwardSlash.Chat — AI Chatbot for Your Website",
     description: "One-time payment. Your own AI assistant. No monthly fees.",
     images: ["/og-image.png"],
   },
+  robots: { index: true, follow: true },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

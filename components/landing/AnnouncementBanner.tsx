@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export function AnnouncementBanner() {
   return (
-    <div className="w-full bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2.5 text-center text-sm text-foreground">
+    <div className="w-full bg-emerald-500/10 border-b border-emerald-500/20 px-3 py-2.5 md:px-4 text-center text-xs sm:text-sm text-foreground leading-snug">
       <span className="font-medium">Limited time only</span>
       {" — "}
       <span>Starter for $129</span>
