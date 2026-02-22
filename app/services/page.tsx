@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FadeInSection } from "@/components/FadeInSection";
 import { Header } from "@/components/landing/Header";
-import { AnnouncementBanner } from "@/components/landing/AnnouncementBanner";
 import { Footer } from "@/components/landing/Footer";
 
 const CHECKOUT_BASE = "/checkout";
@@ -22,7 +21,6 @@ const CHECKOUT_BASE = "/checkout";
 export default function ServicesPage() {
   return (
     <main className="min-h-screen bg-background">
-      <AnnouncementBanner />
       <Header />
 
       {/* Hero */}
