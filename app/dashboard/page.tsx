@@ -195,8 +195,8 @@ function DashboardContent() {
     contentCount?: number;
   } | null>(null);
   const [myOrders, setMyOrders] = useState<{
-    order: { id: string; status?: string; planSlug?: string };
-    customer: { businessName: string; websiteUrl: string } | null;
+    order: { id: string; status?: string; planSlug?: string; amountCents?: number };
+    customer: { businessName: string; websiteUrl: string; status?: string } | null;
     contentCount: number;
     estimatedPages: number;
   }[]>([]);
