@@ -28,7 +28,7 @@ export function CustomerChat({
     api: "/api/chat",
     body: { customerId },
     onFinish: useCallback(
-      async (_message, { message: finalMessage }) => {
+      async (finalMessage) => {
         const content = finalMessage?.content;
         if (typeof content !== "string" || !content.trim()) return;
         const idx = nextAssistantIndexRef.current;
