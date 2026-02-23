@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { sanitizeChatMessage, LIMITS } from "@/lib/validation";
 import { ChatMessageContent } from "@/components/chat/ChatMessageContent";
 import { ChatCards } from "@/components/chat/ChatCards";
-import { getDemoCardsForMessage } from "@/lib/demo-cards";
+import { getDemoCardsForMessage, shouldShowBlogPill } from "@/lib/demo-cards";
 
 const CAL_LINK = process.env.NEXT_PUBLIC_STRATEGY_CALL_URL || "https://cal.com/forwardslash/30min";
 
@@ -130,6 +130,12 @@ We're based in Orlando, Florida and reply fast.`,
 From a quick [starter site for $350](/services#pricing) to full custom builds.
 Check the [demo](/chat/demo) or see [how it works](/services#how-it-works).`,
     },
+    {
+      keywords: ["blog", "blogs", "article", "articles", "post", "posts", "read your", "writing", "tips"],
+      answer:
+        "Here are some posts we've written on getting online, one-time pricing, and using an AI chatbot for your business. Tap a card to read more.",
+      followUps: ["How much does it cost?", "What's the $350 starter?"],
+    },
   ];
 
   for (const { keywords, answer, pills, followUps } of pairs) {
@@ -222,7 +228,11 @@ export default function DemoChatPage() {
             </>
           ) : (
             <div className="space-y-6">
-              {messages.map((m, i) => (
+              {messages.map((m, i) => {
+                const userQuery = m.role === "assistant" ? messages[i - 1]?.content ?? "" : "";
+                const cards = m.role === "assistant" ? getDemoCardsForMessage(userQuery) : [];
+                const showBlogPill = m.role === "assistant" && shouldShowBlogPill(userQuery);
+                return (
                 <div key={m.id ?? `msg-${i}`} className={m.role === "user" ? "flex justify-end" : ""}>
                   <div
                     className={`inline-block max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
@@ -234,7 +244,18 @@ export default function DemoChatPage() {
                     {m.role === "assistant" ? (
                       <>
                         <ChatMessageContent content={m.content} />
-                        <ChatCards blocks={getDemoCardsForMessage(m.content)} primaryColor="#059669" />
+                        <ChatCards blocks={cards} primaryColor="#059669" compact />
+                        {showBlogPill && (
+                          <div className="mt-3">
+                            <button
+                              type="button"
+                              onClick={() => send("What blog posts do you have?")}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 text-foreground transition-colors border border-border"
+                            >
+                              Blog →
+                            </button>
+                          </div>
+                        )}
                         {m.followUps && m.followUps.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {m.followUps.map((f) => (
@@ -267,7 +288,8 @@ export default function DemoChatPage() {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="inline-block px-4 py-3 rounded-2xl bg-muted/80 text-muted-foreground text-sm">
