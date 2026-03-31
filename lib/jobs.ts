@@ -4,6 +4,18 @@ import { eq, sql } from "drizzle-orm";
 
 export type JobRow = typeof jobs.$inferSelect;
 
+export async function getJobByDedupeKey(dedupeKey: string): Promise<JobRow | null> {
+  if (!db) return null;
+  const res = await db.execute(sql`
+    SELECT *
+    FROM jobs
+    WHERE dedupe_key = ${dedupeKey}
+    LIMIT 1
+  `);
+  const rows = (res as unknown as { rows?: JobRow[] }).rows;
+  return Array.isArray(rows) ? rows[0] ?? null : null;
+}
+
 export async function enqueueJob(input: {
   type: string;
   payload: Record<string, unknown>;
@@ -28,6 +40,34 @@ export async function enqueueJob(input: {
     if (input.dedupeKey && msg.toLowerCase().includes("duplicate")) return;
     throw e;
   }
+}
+
+/**
+ * Enqueue a job by dedupeKey, or "kick" an existing one back to queued.
+ * This is ideal for user-triggered actions (like "Go live") that may be clicked multiple times.
+ */
+export async function enqueueOrKickJob(input: {
+  type: string;
+  payload: Record<string, unknown>;
+  dedupeKey: string;
+  runAt?: Date;
+  maxAttempts?: number;
+}): Promise<void> {
+  if (!db) return;
+  const runAt = input.runAt ?? new Date();
+  const maxAttempts = input.maxAttempts ?? 8;
+  await db.execute(sql`
+    INSERT INTO jobs (type, status, dedupe_key, attempts, max_attempts, run_at, payload, created_at, updated_at)
+    VALUES (${input.type}, 'queued', ${input.dedupeKey}, 0, ${maxAttempts}, ${runAt}, ${JSON.stringify(input.payload)}::jsonb, now(), now())
+    ON CONFLICT (dedupe_key) DO UPDATE
+    SET status = 'queued',
+        type = EXCLUDED.type,
+        payload = EXCLUDED.payload,
+        run_at = EXCLUDED.run_at,
+        max_attempts = EXCLUDED.max_attempts,
+        last_error = NULL,
+        updated_at = now()
+  `);
 }
 
 export async function claimNextJob(): Promise<JobRow | null> {

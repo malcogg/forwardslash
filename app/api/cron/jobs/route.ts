@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { claimNextJob, markJobFailed, markJobSucceeded } from "@/lib/jobs";
 import { autoCrawlCustomer } from "@/lib/customer-crawl";
+import { autoGoLiveCustomer } from "@/lib/go-live";
 
 export const dynamic = "force-dynamic";
 
 const JOB_TYPE_AUTO_CRAWL = "auto_crawl_customer";
+const JOB_TYPE_GO_LIVE = "go_live_domain";
 
 function requireCronAuth(req: NextRequest): NextResponse | null {
   const authHeader = req.headers.get("authorization");
@@ -44,6 +46,13 @@ export async function GET(req: NextRequest) {
 
         const res = await autoCrawlCustomer({ customerId, notifyEmail, reason: "payment", maxPages });
         if (!res.ok) throw new Error(res.error ?? "Auto crawl failed");
+      } else if (job.type === JOB_TYPE_GO_LIVE) {
+        const payload = (job.payload ?? {}) as Record<string, unknown>;
+        const customerId = typeof payload.customerId === "string" ? payload.customerId : "";
+        if (!customerId) throw new Error("Missing payload.customerId");
+
+        const res = await autoGoLiveCustomer(customerId);
+        if (!res.ok) throw new Error(res.error ?? "Go live failed");
       } else {
         throw new Error(`Unknown job type: ${job.type}`);
       }
