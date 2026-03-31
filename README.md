@@ -102,3 +102,14 @@ Open `http://localhost:3000`.
 - `DEPLOYMENT.md` — production checklist + cron + domain automation
 - `API_KEYS.md` — key management + reliability notes
 - `docs/VERCEL-DOMAIN-AUTOMATION-SETUP.md` — how to set up Vercel token + project id
+
+## v0.dev deployment note
+
+If you are deploying via v0.dev, it may be pinned to a single Git branch. Make sure the deployment SHA matches `GET /api/version`, and if v0 is stuck on an older commit, do a hard reset in the v0 terminal:
+
+```bash
+git fetch origin
+git checkout trigger-code-change
+git reset --hard origin/trigger-code-change
+git clean -fd
+```
