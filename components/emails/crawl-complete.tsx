@@ -22,7 +22,8 @@ export function CrawlCompleteEmail({
   pagesCrawled,
   chatUrl: chatUrlProp,
 }: CrawlCompleteEmailProps) {
-  const cnameBlock = `Type: CNAME\nHost: ${subdomain}\nValue: cname.forwardslash.chat`;
+  const cnameTarget = process.env.CNAME_TARGET ?? "cname.vercel-dns.com";
+  const cnameBlock = `Type: CNAME\nHost: ${subdomain}\nValue: ${cnameTarget}`;
   const chatUrl = chatUrlProp ?? `https://${subdomain}.${domain}`;
 
   return (

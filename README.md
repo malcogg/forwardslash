@@ -61,6 +61,7 @@ Optional (only needed for domain automation + cron/admin):
 - `VERCEL_ACCESS_TOKEN`
 - `VERCEL_PROJECT_ID`
 - `CNAME_TARGET` (defaults to `cname.vercel-dns.com`)
+- `NEXT_PUBLIC_CNAME_TARGET` (recommended: match `CNAME_TARGET` so the dashboard DNS instructions are correct)
 - `CRON_SECRET`
 - `ADMIN_EMAILS`
 

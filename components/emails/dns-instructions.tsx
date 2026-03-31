@@ -15,7 +15,8 @@ export function DnsInstructionsEmail({
   domain,
   subdomain,
 }: DnsInstructionsEmailProps) {
-  const cnameBlock = `Type: CNAME\nHost: ${subdomain}\nValue: cname.forwardslash.chat`;
+  const cnameTarget = process.env.CNAME_TARGET ?? "cname.vercel-dns.com";
+  const cnameBlock = `Type: CNAME\nHost: ${subdomain}\nValue: ${cnameTarget}`;
 
   return (
     <div style={{ fontFamily: "sans-serif", maxWidth: "600px", margin: "0 auto" }}>

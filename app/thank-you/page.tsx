@@ -30,14 +30,14 @@ function ThankYouContent() {
             Thanks for your order!
           </h1>
           <p className="text-muted-foreground mb-8">
-            We&apos;ve received your payment and will be in touch soon.
+            We&apos;ve received your payment and we&apos;re building your chatbot now. Check your dashboard in a few minutes.
           </p>
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <p className="text-sm font-medium text-foreground">
               Create an account to track your order and get updates.
             </p>
             <p className="text-xs text-muted-foreground">
-              You&apos;ll see your order details, status, and next steps in your dashboard.
+              You&apos;ll see your order status and when your content is ready in your dashboard.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link

@@ -3,6 +3,9 @@
 import { ArrowLeft, Check, Copy, ExternalLink } from "lucide-react";
 import { getProgressSteps, getPlanLabel, getSiteStatusLabel } from "./mobile-types";
 
+const PUBLIC_CNAME_TARGET =
+  process.env.NEXT_PUBLIC_CNAME_TARGET || "cname.vercel-dns.com";
+
 type SiteData = {
   order: {
     id: string;
@@ -55,6 +58,7 @@ export function MobileSiteDetail({
       ? `https://${customer.subdomain}.${customer.domain}`
       : null;
   const isLive = customer?.status === "delivered" || (isWebsiteOrder && order.status === "delivered");
+  const cnameValue = PUBLIC_CNAME_TARGET;
 
   const planFeatures = isWebsiteOrder
     ? ["Full website design", "Hosting included", "Ongoing support"]
@@ -153,6 +157,9 @@ export function MobileSiteDetail({
                 <span className="text-sm text-muted-foreground">Add your domain to get your URL</span>
               )}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              DNS record: <span className="font-mono">CNAME</span> {customer?.subdomain ?? "chat"} → <span className="font-mono">{cnameValue}</span>
+            </p>
           </div>
         )}
 

@@ -45,6 +45,7 @@ Note: this codebase currently uses the single-key vars above. Multi-key rotation
 - `VERCEL_PROJECT_ID`
 - Optional:
   - `CNAME_TARGET` (defaults to `cname.vercel-dns.com`)
+  - `NEXT_PUBLIC_CNAME_TARGET` (recommended: set to the same value as `CNAME_TARGET` so the dashboard/email instructions match)
 
 ---
 

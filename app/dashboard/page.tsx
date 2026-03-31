@@ -19,6 +19,9 @@ import { MobileAddSite } from "@/components/dashboard/MobileAddSite";
 import { MobileAccount } from "@/components/dashboard/MobileAccount";
 import { MobileSiteDetail } from "@/components/dashboard/MobileSiteDetail";
 
+const PUBLIC_CNAME_TARGET =
+  process.env.NEXT_PUBLIC_CNAME_TARGET || "cname.vercel-dns.com";
+
 function getDisplayName(user: { firstName?: string | null; lastName?: string | null; fullName?: string | null } | null | undefined): string {
   if (!user) return "Michael Francis";
   if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
@@ -308,6 +311,39 @@ function DashboardContent() {
     return () => clearInterval(interval);
   }, [orderId, data?.order?.status, data?.order?.id]);
 
+  // After payment: auto-refresh until content is ready (background job).
+  useEffect(() => {
+    const isWebsiteOrder = data?.order?.planSlug && ["starter", "new-build", "redesign"].includes(data.order.planSlug);
+    const shouldPoll = !!data?.order?.id && data.order.status === "paid" && (data?.contentCount ?? 0) === 0 && !isWebsiteOrder;
+    if (!shouldPoll) return;
+    const currentOrderId = orderId ?? data.order.id;
+    let ticks = 0;
+    const interval = setInterval(async () => {
+      ticks++;
+      // ~10 minutes then stop polling
+      if (ticks > 40) {
+        clearInterval(interval);
+        return;
+      }
+      const headers = await authHeaders();
+      const url = currentOrderId
+        ? `/api/dashboard?orderId=${encodeURIComponent(currentOrderId)}`
+        : "/api/dashboard";
+      const res = await fetch(url, { credentials: "include", cache: "no-store", headers: { ...headers } });
+      if (!res.ok) return;
+      const json = await res.json();
+      const nextContent = Number(json?.contentCount ?? 0);
+      if (nextContent > 0) {
+        setData(json);
+        const h = await authHeaders();
+        const r = await fetch("/api/orders/me", { credentials: "include", headers: { ...h } });
+        if (r.ok) setMyOrders(await r.json());
+        clearInterval(interval);
+      }
+    }, 15_000);
+    return () => clearInterval(interval);
+  }, [orderId, data?.order?.id, data?.order?.planSlug, data?.order?.status, data?.contentCount]);
+
   useEffect(() => {
     if (typeof window === "undefined" || !canCallApi || loading || error) return;
     try {
@@ -385,7 +421,7 @@ function DashboardContent() {
   };
 
   const copyCname = () => {
-    const cname = `Type: CNAME\nHost: ${customer?.subdomain ?? "chat"}\nValue: cname.forwardslash.chat`;
+    const cname = `Type: CNAME\nHost: ${customer?.subdomain ?? "chat"}\nValue: ${PUBLIC_CNAME_TARGET}`;
     navigator.clipboard.writeText(cname).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -419,7 +455,7 @@ function DashboardContent() {
       configs.push({ id: "website_order", title: "Website order confirmed", body: "We've received your payment. We'll reach out soon to start planning your website project." });
     }
     if (isPaid && contentCount === 0 && !isWebsiteOrder) {
-      configs.push({ id: "payment_confirmed", title: "Payment confirmed", body: "We're building your chatbot. Click \"Build my chatbot\" in the Training section to crawl your site and train the AI on your content." });
+      configs.push({ id: "payment_confirmed", title: "Payment confirmed", body: "We're building your chatbot automatically now. This usually takes a few minutes. If nothing happens after ~2 minutes, click “Build my chatbot” in Training." });
     }
     if (isPaid && contentCount > 0 && !isTestingOrLive) {
       configs.push({ id: "crawl_done", title: "Content ready", body: `We've crawled ${contentCount} pages. Your chatbot is being trained on your content. Next: we'll email you when it's time to add your domain (e.g. chat.yoursite.com).` });
@@ -994,12 +1030,22 @@ function DashboardContent() {
                       )}
                       <button
                         onClick={handleCrawl}
-                        disabled={crawling || (isPaid && !canRescan && contentCount > 0)}
+                        disabled={crawling || (isPaid && !canRescan && contentCount > 0) || (!!isPaid && contentCount === 0 && customer.status === "crawling")}
                         className={`w-full px-3 py-2 text-sm bg-primary text-primary-foreground rounded hover:opacity-90 disabled:opacity-50 transition-all ${crawling ? "animate-pulse" : ""}`}
                       >
-                        {crawling ? "Crawling…" : !isPaid ? "Pay to scan" : contentCount ? (canRescan ? "Rescan site" : "Rescan (7-day cooldown)") : "Build my chatbot"}
+                        {crawling
+                          ? "Crawling…"
+                          : !isPaid
+                            ? "Pay to scan"
+                            : contentCount
+                              ? (canRescan ? "Rescan site" : "Rescan (7-day cooldown)")
+                              : (customer.status === "crawling" ? "Building (in progress)…" : "Build my chatbot")}
                       </button>
-                      {crawling && <p className="text-xs text-muted-foreground mt-1">This typically takes 2–8 minutes. We&apos;ll email you when it&apos;s ready.</p>}
+                      {(crawling || (isPaid && contentCount === 0)) && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This typically takes 2–8 minutes. We&apos;ll email you when it&apos;s ready.
+                        </p>
+                      )}
                       {crawlError && <p className="text-xs text-destructive mt-1">{crawlError}</p>}
                     </div>
                   )}
@@ -1036,7 +1082,7 @@ function DashboardContent() {
                   <p className="text-sm text-muted-foreground mb-4">Add this CNAME record to your DNS:</p>
                   <div className="relative">
                     <pre className="bg-muted p-4 rounded-lg text-sm overflow-x-auto border border-border pr-12">
-                      {`Type: CNAME\nHost: ${customer.subdomain}\nValue: cname.forwardslash.chat`}
+                      {`Type: CNAME\nHost: ${customer.subdomain}\nValue: ${PUBLIC_CNAME_TARGET}`}
                     </pre>
                     <button
                       onClick={copyCname}
@@ -1511,7 +1557,7 @@ function DashboardContent() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Step 3</p>
                 <h3 className="font-serif text-xl font-semibold text-foreground mt-1">We train your AI</h3>
                 <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-                  Click &quot;Build my chatbot&quot; and we&apos;ll crawl your site and train the AI on your content. You can preview the chat here.
+                  After payment, we start building your chatbot automatically. You can also click &quot;Build my chatbot&quot; any time to kick off a crawl.
                 </p>
                 <button
                   type="button"
