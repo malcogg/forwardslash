@@ -4,6 +4,7 @@ import { scans } from "@/db/schema";
 import { getOrCreateUser } from "@/lib/auth";
 import { sanitizeWebsiteUrl, isValidUrl } from "@/lib/validation";
 import { assertSafeOutboundHttpUrl } from "@/lib/url-safety";
+import { fetchWithRetry } from "@/lib/fetch-retry";
 
 const CATEGORY_PATTERNS: { label: string; patterns: RegExp[] }[] = [
   { label: "Products", patterns: [/\/product/i, /\/shop/i, /\/store/i, /\/p\//, /\/item/i, /\/catalog/i] },
@@ -49,9 +50,17 @@ async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success
     await new Promise((r) => setTimeout(r, pollInterval * 1000));
     elapsed += pollInterval;
 
-    const statusRes = await fetch(`https://api.firecrawl.dev/v2/crawl/${startJson.id}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const statusRes = await fetchWithRetry(
+      `https://api.firecrawl.dev/v2/crawl/${startJson.id}`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeoutMs: 10_000,
+        maxAttempts: 3,
+        baseDelayMs: 400,
+        maxDelayMs: 3_000,
+        logTag: "firecrawl-status",
+      }
+    );
     const status = (await statusRes.json()) as {
       success?: boolean;
       status?: string;

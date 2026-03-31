@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { customers, orders } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getOrCreateUser } from "@/lib/auth";
+import { fetchWithRetry } from "@/lib/fetch-retry";
 
 const CNAME_TARGET = process.env.CNAME_TARGET ?? "cname.vercel-dns.com";
 
@@ -11,8 +12,9 @@ const CNAME_TARGET = process.env.CNAME_TARGET ?? "cname.vercel-dns.com";
  */
 async function verifyCname(host: string): Promise<boolean> {
   try {
-    const res = await fetch(
-      `https://dns.google/resolve?name=${encodeURIComponent(host)}&type=CNAME`
+    const res = await fetchWithRetry(
+      `https://dns.google/resolve?name=${encodeURIComponent(host)}&type=CNAME`,
+      { timeoutMs: 6_000, maxAttempts: 3, logTag: "dns-verify" }
     );
     const json = (await res.json()) as { Answer?: { data?: string }[] };
     const answers = json.Answer ?? [];
@@ -80,7 +82,7 @@ export async function POST(
     );
   }
 
-  const vercelRes = await fetch(
+  const vercelRes = await fetchWithRetry(
     `https://api.vercel.com/v10/projects/${projectId}/domains`,
     {
       method: "POST",
@@ -89,6 +91,12 @@ export async function POST(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ name: customDomain }),
+      timeoutMs: 10_000,
+      maxAttempts: 3,
+      baseDelayMs: 500,
+      maxDelayMs: 7_000,
+      allowNonIdempotentRetry: true,
+      logTag: "vercel-domain",
     }
   );
 

@@ -9,6 +9,7 @@ import { resend, FROM_EMAIL } from "@/lib/resend";
 import { CrawlCompleteEmail } from "@/components/emails/crawl-complete";
 import { DnsInstructionsEmail } from "@/components/emails/dns-instructions";
 import { assertSafeOutboundHttpUrl } from "@/lib/url-safety";
+import { fetchWithRetry } from "@/lib/fetch-retry";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
@@ -50,9 +51,17 @@ async function runFirecrawlCrawl(
     await new Promise((r) => setTimeout(r, pollInterval * 1000));
     elapsed += pollInterval;
 
-    const statusRes = await fetch(`https://api.firecrawl.dev/v2/crawl/${startJson.id}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
+    const statusRes = await fetchWithRetry(
+      `https://api.firecrawl.dev/v2/crawl/${startJson.id}`,
+      {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        timeoutMs: 10_000,
+        maxAttempts: 3,
+        baseDelayMs: 400,
+        maxDelayMs: 3_000,
+        logTag: "firecrawl-status",
+      }
+    );
     const status = (await statusRes.json()) as {
       success?: boolean;
       status?: string;
