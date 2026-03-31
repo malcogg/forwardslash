@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { FadeInSection } from "@/components/FadeInSection";
 
 const faqs = [
   {
@@ -32,6 +33,7 @@ export function FaqSection() {
   return (
     <section className="py-24 px-6 bg-background">
       <div className="max-w-5xl mx-auto">
+        <FadeInSection>
         <div className="grid md:grid-cols-2 gap-12">
           <div>
             <h2 className="font-serif text-3xl md:text-4xl text-foreground">
@@ -60,6 +62,7 @@ export function FaqSection() {
             <div className="border-t border-border" />
           </div>
         </div>
+        </FadeInSection>
       </div>
     </section>
   );

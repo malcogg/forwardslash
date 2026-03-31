@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { CustomerChat } from "@/components/CustomerChat";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Zap } from "lucide-react";
 
 export default function CustomerChatPage() {
   const params = useParams();
@@ -27,38 +28,48 @@ export default function CustomerChatPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <p className="text-zinc-400">Loading...</p>
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Loading...</p>
       </main>
     );
   }
 
   if (error || !customer) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-zinc-950 p-8">
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 p-8">
         <div className="text-center">
-          <p className="text-zinc-400 mb-4">{error ?? "Chatbot not found"}</p>
-          <Link href="/" className="text-blue-400 hover:underline">Back to ForwardSlash.Chat</Link>
+          <p className="text-gray-600 mb-4">{error ?? "Chatbot not found"}</p>
+          <Link href="/" className="text-emerald-600 hover:underline">Back to ForwardSlash.Chat</Link>
         </div>
       </main>
     );
   }
 
   return (
-    <div className="h-screen flex flex-col bg-zinc-950">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
-        <span className="font-semibold text-white">{customer.businessName}</span>
-        <Link href="/" className="text-sm text-zinc-400 hover:text-white">
+    <div className="h-screen flex flex-col bg-gray-50">
+      <header className="flex items-center justify-end px-4 py-2 border-b border-gray-200 bg-white shrink-0">
+        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
           ForwardSlash.Chat
         </Link>
       </header>
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden relative">
         <CustomerChat
           customerId={customerId}
           businessName={customer.businessName}
           primaryColor={customer.primaryColor ?? "#6B4E3D"}
           compact={false}
         />
+        {/* Shirt-tag style: full bleed, tucked in corner, black bg, white text */}
+        <a
+          href="https://forwardslash.chat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute bottom-0 right-0 flex items-center gap-1.5 bg-black text-white px-3 py-1.5 text-xs font-medium -rotate-3 origin-bottom-right hover:bg-gray-900 hover:text-white shadow-sm"
+          style={{ borderTopLeftRadius: 4 }}
+        >
+          <Zap className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} />
+          <span>ForwardSlash</span>
+        </a>
       </div>
     </div>
   );

@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { orders, customers } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { orders, customers, content } from "@/db/schema";
+import { eq, desc, count } from "drizzle-orm";
 import { getOrCreateUser } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/orders/me
  * Returns current user's orders with customers (for sidebar, site list).
  */
-export async function GET() {
-  const user = await getOrCreateUser();
+export async function GET(request: Request) {
+  const user = await getOrCreateUser(request);
   if (!user?.userId) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
@@ -31,7 +33,20 @@ export async function GET() {
         .select()
         .from(customers)
         .where(eq(customers.orderId, order.id));
-      return { order, customer: customer ?? null };
+      let contentCount = 0;
+      if (customer) {
+        const [c] = await database
+          .select({ count: count() })
+          .from(content)
+          .where(eq(content.customerId, customer.id));
+        contentCount = c?.count ?? 0;
+      }
+      return {
+        order,
+        customer: customer ?? null,
+        contentCount,
+        estimatedPages: customer?.estimatedPages ?? 25,
+      };
     })
   );
 

@@ -1,257 +1,112 @@
-import { FileText, Globe, Upload } from "lucide-react";
+"use client";
+
+import { useRef } from "react";
+import Link from "next/link";
+import { motion, useInView } from "framer-motion";
+import { Search, Palette, Globe, CreditCard, Rocket } from "lucide-react";
+
+const MotionPath = motion.path;
 import { Button } from "@/components/ui/button";
 
+const CARDS = [
+  { step: 1, title: "Scan Your Site", description: "Enter your URL — we crawl and extract your content instantly.", icon: Search },
+  { step: 2, title: "Add Your Brand", description: "We take care of the rest — AI trains on your real content.", icon: Palette },
+  { step: 3, title: "Connect Domain", description: "Set chat.yourbrand.com — fully branded, seamless integration.", icon: Globe },
+  { step: 4, title: "Pay Once", description: "Starting From $799 — hosting included, zero monthly fees forever.", icon: CreditCard },
+  { step: 5, title: "Go Live!", description: "Deploy instantly — your AI starts answering visitors 24/7.", icon: Rocket },
+] as const;
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.12, duration: 0.4 },
+  }),
+};
+
 export function HowItWorks() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.15 });
+
   return (
-    <section id="how-it-works" className="py-24 px-6 bg-background">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-20">
-          <span className="inline-block px-4 py-1.5 text-sm border border-border rounded-full mb-6 text-muted-foreground">
-            How it works
-          </span>
-          <h2 className="font-serif text-3xl md:text-4xl lg:text-5xl text-balance text-foreground">
-            The easiest way to
-            <br />
-            get your AI chatbot
+    <section id="how-it-works" className="py-24 px-6 bg-background" ref={sectionRef}>
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12 md:mb-16">
+          <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
+            How It Works
           </h2>
-          <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-            Scan your site, pay once, add your brand. We train your AI and deploy it at your subdomain — no monthly fees.
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">
+            Get your custom AI chatbot live in minutes to hours — no subscriptions, no hassle.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-          <div className="order-2 md:order-1">
-            <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">1. Scan your site</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Enter your URL. We crawl your pages and extract your content — services, FAQ, products, blog. Pick your
-              tier based on page count.
-            </p>
+        {/* Card grid: line runs at badge height, badges overlap card tops */}
+        <div className="relative pt-6">
+          {/* Desktop: horizontal line through badge centers — behind cards, z-0 */}
+          <div className="hidden lg:block absolute left-0 right-0 top-6 h-px pointer-events-none" aria-hidden>
+            <svg className="w-full h-2 -translate-y-1/2" viewBox="0 0 100 2" preserveAspectRatio="none">
+              <MotionPath
+                d="M 0 1 L 100 1"
+                stroke="#10b981"
+                strokeWidth="0.5"
+                fill="none"
+                strokeLinecap="round"
+                initial={{ pathLength: 0, opacity: 0.6 }}
+                animate={inView ? { pathLength: 1, opacity: 0.8 } : { pathLength: 0, opacity: 0.6 }}
+                transition={{ pathLength: { duration: 1.2, ease: "easeInOut" }, opacity: { duration: 0.3 } }}
+              />
+            </svg>
           </div>
-          <div className="order-1 md:order-2">
-            <ScanCard />
+          {/* Mobile: vertical dashed connector */}
+          <div className="lg:hidden absolute left-1/2 top-6 bottom-0 -translate-x-1/2 w-px pointer-events-none" aria-hidden style={{ transformOrigin: "top" }}>
+            <motion.div
+              className="h-full w-px border-l-2 border-dashed border-emerald-500/60"
+              initial={{ scaleY: 0 }}
+              animate={inView ? { scaleY: 1 } : { scaleY: 0 }}
+              transition={{ duration: 1, delay: 0.2 }}
+              style={{ transformOrigin: "top" }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 md:gap-8 relative z-10">
+            {CARDS.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={card.title}
+                  custom={index}
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate={inView ? "visible" : "hidden"}
+                  className="group relative bg-card rounded-xl pt-12 pb-6 px-6 md:pt-14 md:pb-8 md:px-8 border border-border shadow-sm
+                    transition-all duration-300 hover:scale-[1.03] hover:shadow-md hover:shadow-emerald-500/10"
+                >
+                  {/* Badge: overlaps top of card, center aligns with connecting line */}
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shrink-0 ring-4 ring-background">
+                    {card.step}
+                  </div>
+                  <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-muted/40 flex items-center justify-center text-muted-foreground">
+                    <Icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground text-center mb-3">
+                    {card.title}
+                  </h3>
+                  <p className="text-base text-muted-foreground text-center">
+                    {card.description}
+                  </p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-          <div>
-            <BrandCard />
-          </div>
-          <div>
-            <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">2. Add your brand</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Upload your logo and favicon, adjust colors. Make your AI chat reflect your existing brand and voice —
-              fully branded and professional.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-          <div className="order-2 md:order-1">
-            <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">3. Connect a custom domain</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Add your own subdomain or path. Your AI chat will live at chat.mybusiness.com or mybusiness.com/chat —
-              a seamless part of your brand, not a third-party widget.
-            </p>
-          </div>
-          <div className="order-1 md:order-2">
-            <DomainCard />
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-12 items-center mb-24">
-          <div>
-            <PaymentsCard />
-          </div>
-          <div>
-            <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">4. Pay once</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              Choose a 1–3 year bundle. One payment covers creation, hosting, and maintenance. No monthly fees or
-              per-message charges.
-            </p>
-          </div>
-        </div>
-
-        <div className="text-center mb-16">
-          <h3 className="font-serif text-2xl md:text-3xl mb-4 text-foreground">5. Go live!</h3>
-          <p className="text-muted-foreground max-w-lg mx-auto mb-6">
-            Your branded AI chatbot is ready. Add a CNAME record and it goes live at your domain in minutes.
-          </p>
-          <Button asChild className="rounded-full bg-foreground text-background hover:bg-foreground/90 px-6">
-            <a href="#scan">Scan your website</a>
+        <div className="mt-12 text-center">
+          <Button asChild variant="cta" size="lg">
+            <Link href="#scan">Scan your website</Link>
           </Button>
         </div>
-
-        <ChatDemo />
       </div>
     </section>
-  );
-}
-
-function ScanCard() {
-  return (
-    <div className="bg-muted/50 rounded-xl p-6">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
-        <h4 className="text-sm font-medium mb-4 text-foreground">Scan results</h4>
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm text-muted-foreground">Page count</label>
-            <div className="h-0.5 bg-muted mt-2 w-full" />
-          </div>
-          <div>
-            <label className="text-sm text-muted-foreground">Categories found</label>
-            <div className="h-0.5 bg-muted mt-2 w-full" />
-          </div>
-        </div>
-
-        <h4 className="text-sm font-medium mt-6 mb-3 text-foreground">Files & pages</h4>
-        <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
-          <FileText className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm">Services, FAQ, Blog...</span>
-        </div>
-
-        <h4 className="text-sm font-medium mt-6 mb-3 text-foreground">Website</h4>
-        <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
-          <Globe className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm">mywebsite.com</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BrandCard() {
-  return (
-    <div className="bg-muted/50 rounded-xl p-6">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-            <span className="text-foreground font-bold">A</span>
-          </div>
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-            <Upload className="w-4 h-4" />
-            Upload logo
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Background</span>
-            <div className="w-8 h-8 rounded-full bg-muted border border-border" />
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Accent</span>
-            <div className="w-8 h-8 rounded-full bg-primary" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DomainCard() {
-  return (
-    <div className="bg-muted/50 rounded-xl p-6">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border space-y-3">
-        <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
-          <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm text-foreground">chat.mybusiness.com</span>
-        </div>
-        <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
-          <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
-          <span className="text-sm text-foreground">mybusiness.com/chat</span>
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-            <span className="text-white text-xs">✓</span>
-          </div>
-          <span className="text-sm text-green-600 dark:text-green-400">Domain connected</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PaymentsCard() {
-  return (
-    <div className="bg-muted/50 rounded-xl p-6">
-      <div className="bg-card rounded-lg p-5 shadow-sm border border-border">
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-primary font-bold text-xl">One-time payment</span>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between py-2 border-b border-border">
-            <span className="text-sm text-foreground">1-Year Starter</span>
-            <span className="text-sm font-medium text-foreground">$550</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-border">
-            <span className="text-sm text-foreground">2-Year Bundle</span>
-            <span className="text-sm font-medium text-foreground">$850</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-foreground">5-Year Bundle</span>
-            <span className="text-sm font-medium text-foreground">$1,950</span>
-          </div>
-        </div>
-
-        <p className="mt-4 text-xs text-muted-foreground">Hosting included • No monthly fees</p>
-      </div>
-    </div>
-  );
-}
-
-function ChatDemo() {
-  return (
-    <div className="rounded-3xl p-8 bg-background border border-border">
-      <div className="max-w-2xl mx-auto bg-card rounded-xl shadow-lg border border-border overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center">
-              <span className="text-foreground text-xs font-bold">A</span>
-            </div>
-            <span className="text-sm font-medium text-foreground">Your Business</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Chat</span>
-            <span className="text-sm text-muted-foreground">About</span>
-            <span className="text-sm text-muted-foreground">Pricing</span>
-            <button className="px-3 py-1 text-xs bg-primary text-primary-foreground rounded-full">Sign up</button>
-          </nav>
-        </div>
-
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-2 text-foreground">How can I help?</h2>
-          <p className="text-sm text-muted-foreground mb-6">
-            Ask me about your services, products,
-            <br />
-            or anything on your website.
-          </p>
-
-          <div className="max-w-md mx-auto mb-6">
-            <div className="border border-input rounded-lg p-3">
-              <input
-                type="text"
-                placeholder="Ask anything"
-                className="w-full text-sm outline-none bg-transparent text-foreground placeholder:text-muted-foreground"
-              />
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <span>📎</span> 0 Files
-                </div>
-                <button className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground text-xs">↑</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-left max-w-md mx-auto space-y-2">
-            <p className="text-sm text-muted-foreground">What services do you offer?</p>
-            <p className="text-sm text-muted-foreground">Tell me about your products</p>
-            <p className="text-sm text-muted-foreground">How do I get in touch?</p>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

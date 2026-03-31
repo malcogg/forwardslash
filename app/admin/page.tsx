@@ -3,6 +3,12 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
+import {
+  LIMITS,
+  sanitizeBusinessName,
+  sanitizeDomain,
+  sanitizeSubdomain,
+} from "@/lib/validation";
 
 type OrderRow = {
   order: {
@@ -103,7 +109,8 @@ export default function AdminPage() {
             type="url"
             placeholder="Website URL"
             value={form.websiteUrl}
-            onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value.slice(0, LIMITS.websiteUrl) }))}
+            maxLength={LIMITS.websiteUrl}
             className="px-3 py-2 rounded-lg border border-input text-foreground"
             required
           />
@@ -111,7 +118,8 @@ export default function AdminPage() {
             type="text"
             placeholder="Business name"
             value={form.businessName}
-            onChange={(e) => setForm((f) => ({ ...f, businessName: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, businessName: sanitizeBusinessName(e.target.value) }))}
+            maxLength={LIMITS.businessName}
             className="px-3 py-2 rounded-lg border border-input text-foreground"
             required
           />
@@ -119,7 +127,8 @@ export default function AdminPage() {
             type="text"
             placeholder="Domain (e.g. test.com)"
             value={form.domain}
-            onChange={(e) => setForm((f) => ({ ...f, domain: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, domain: sanitizeDomain(e.target.value) }))}
+            maxLength={LIMITS.domain}
             className="px-3 py-2 rounded-lg border border-input text-foreground"
             required
           />
@@ -127,7 +136,8 @@ export default function AdminPage() {
             type="text"
             placeholder="Subdomain (default: chat)"
             value={form.subdomain}
-            onChange={(e) => setForm((f) => ({ ...f, subdomain: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, subdomain: sanitizeSubdomain(e.target.value) }))}
+            maxLength={LIMITS.subdomain}
             className="px-3 py-2 rounded-lg border border-input text-foreground"
           />
           <button
