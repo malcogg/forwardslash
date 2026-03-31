@@ -12,6 +12,14 @@ import {
   isValidPlanSlug,
   isValidUrl,
 } from "@/lib/validation";
+import {
+  computeCheckoutAmountCents,
+  planNameFromSlug,
+  type CheckoutAddOnId,
+  type CheckoutPlanSlug,
+} from "@/lib/checkout-pricing";
+import { getOrCreateUser } from "@/lib/auth";
+import { eq } from "drizzle-orm";
 
 const VALID_ADD_ONS = new Set([
   "dns",
@@ -30,26 +38,6 @@ function sanitizeAddOns(raw: unknown): string[] {
   return raw
     .filter((v): v is string => typeof v === "string" && VALID_ADD_ONS.has(v))
     .slice(0, 10);
-}
-
-function bundleYearsFromPlanSlug(planSlug: string): number {
-  if (planSlug === "starter-bot" || planSlug === "chatbot-1y") return 1;
-  if (planSlug === "chatbot-2y") return 2;
-  if (planSlug === "chatbot-3y") return 3;
-  return 0; // website plans: starter, new-build, redesign
-}
-
-function planNameFromSlug(planSlug: string): string {
-  const map: Record<string, string> = {
-    "starter-bot": "Starter — 5 pages, 1 year",
-    "chatbot-1y": "AI Chatbot (1 year)",
-    "chatbot-2y": "AI Chatbot (2 years)",
-    "chatbot-3y": "AI Chatbot (3 years)",
-    starter: "Quick WordPress Starter",
-    "new-build": "Brand New Website Build",
-    redesign: "Website Redesign / Refresh",
-  };
-  return map[planSlug] ?? planSlug;
 }
 
 /**
@@ -82,6 +70,8 @@ export async function POST(request: Request) {
       planSlug,
       addOns,
       amountCents,
+      pages,
+      orderId,
     } = body as Record<string, unknown>;
 
     if (
@@ -125,14 +115,29 @@ export async function POST(request: Request) {
     if (!safeWebsiteUrl || !isValidUrl(safeWebsiteUrl)) {
       return NextResponse.json({ error: "Valid website URL required" }, { status: 400 });
     }
-    if (amountCents < 100 || amountCents > 999_999_99) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    // Note: amountCents is accepted for backward compatibility, but is NOT trusted for pricing.
+
+    const rawAddOns = sanitizeAddOns(addOns);
+    const safePlanSlug = String(planSlug) as CheckoutPlanSlug;
+    if (safePlanSlug === ("chatbot-3y" as unknown as CheckoutPlanSlug)) {
+      return NextResponse.json({ error: "chatbot-3y not supported in checkout yet" }, { status: 400 });
     }
 
-    const safeAddOns = sanitizeAddOns(addOns);
-    const bundleYears = bundleYearsFromPlanSlug(String(planSlug));
-    const dnsHelp = safeAddOns.includes("dns");
-    const planName = planNameFromSlug(String(planSlug));
+    // Only a subset of add-ons are billable today; ignore unknowns.
+    const billableAddOns = rawAddOns.filter((a): a is CheckoutAddOnId =>
+      a === "dns" || a === "starter" || a === "new-build" || a === "redesign" || a === "social-media"
+    );
+
+    const computed = computeCheckoutAmountCents({
+      planSlug: safePlanSlug,
+      addOns: billableAddOns,
+      pages: typeof pages === "number" ? pages : undefined,
+    });
+
+    const bundleYears = computed.bundleYears;
+    const dnsHelp = billableAddOns.includes("dns");
+    const planName = planNameFromSlug(safePlanSlug);
+    const serverAmountCents = computed.amountCents;
 
     // 1) Save lead (for abandonment emails, records)
     await db.insert(checkoutLeads).values({
@@ -142,49 +147,114 @@ export async function POST(request: Request) {
       businessName: safeBusinessName,
       domain: safeDomain,
       websiteUrl: safeWebsiteUrl,
-      planSlug: String(planSlug),
-      addOns: safeAddOns,
-      amountCents,
+      planSlug: safePlanSlug,
+      addOns: billableAddOns,
+      amountCents: serverAmountCents,
     });
 
-    // 2) Create order (pending) + customer
-    const [order] = await db
-      .insert(orders)
-      .values({
-        amountCents,
-        bundleYears,
-        planSlug: String(planSlug),
-        addOns: safeAddOns,
-        dnsHelp,
-        status: "pending",
-      })
-      .returning();
+    // If the user is signed in, attach order to user. Also allow paying for an existing order (dashboard flow).
+    const authedUser = await getOrCreateUser(request);
+    const internalUserId = authedUser?.userId ?? null;
+
+    let order:
+      | (typeof orders.$inferSelect & { id: string })
+      | undefined;
+    let customer:
+      | (typeof customers.$inferSelect & { id: string })
+      | undefined;
+
+    const requestedOrderId = typeof orderId === "string" ? orderId : null;
+    if (requestedOrderId && internalUserId) {
+      const [existingOrder] = await db.select().from(orders).where(eq(orders.id, requestedOrderId));
+      if (existingOrder && (existingOrder.userId === internalUserId || !existingOrder.userId)) {
+        if (existingOrder.status === "paid") {
+          return NextResponse.json({ error: "Order is already paid" }, { status: 409 });
+        }
+        await db
+          .update(orders)
+          .set({
+            userId: existingOrder.userId ?? internalUserId,
+            amountCents: serverAmountCents,
+            bundleYears,
+            planSlug: safePlanSlug,
+            addOns: billableAddOns,
+            dnsHelp,
+            status: "pending",
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.id, requestedOrderId));
+        const [updated] = await db.select().from(orders).where(eq(orders.id, requestedOrderId));
+        order = updated;
+
+        const [existingCustomer] = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.orderId, requestedOrderId));
+        if (existingCustomer) {
+          const prepaidUntil = new Date();
+          prepaidUntil.setFullYear(prepaidUntil.getFullYear() + (bundleYears || 1));
+          await db
+            .update(customers)
+            .set({
+              businessName: safeBusinessName,
+              domain: safeDomain,
+              subdomain: "chat",
+              websiteUrl: safeWebsiteUrl.startsWith("http") ? safeWebsiteUrl : `https://${safeWebsiteUrl}`,
+              estimatedPages: computed.estimatedPages ?? undefined,
+              prepaidUntil,
+              updatedAt: new Date(),
+            })
+            .where(eq(customers.id, existingCustomer.id));
+          const [updatedCustomer] = await db
+            .select()
+            .from(customers)
+            .where(eq(customers.id, existingCustomer.id));
+          customer = updatedCustomer;
+        }
+      }
+    }
 
     if (!order) {
-      return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+      // 2) Create order (pending) + customer
+      const [createdOrder] = await db
+        .insert(orders)
+        .values({
+          userId: internalUserId ?? null,
+          amountCents: serverAmountCents,
+          bundleYears,
+          planSlug: safePlanSlug,
+          addOns: billableAddOns,
+          dnsHelp,
+          status: "pending",
+        })
+        .returning();
+      order = createdOrder;
+      if (!order) {
+        return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+      }
     }
 
     const prepaidUntil = new Date();
     prepaidUntil.setFullYear(prepaidUntil.getFullYear() + (bundleYears || 1));
 
-    const isStarterBot = String(planSlug) === "starter-bot";
-
-    const [customer] = await db
-      .insert(customers)
-      .values({
-        orderId: order.id,
-        businessName: safeBusinessName,
-        domain: safeDomain,
-        subdomain: "chat",
-        websiteUrl: safeWebsiteUrl.startsWith("http") ? safeWebsiteUrl : `https://${safeWebsiteUrl}`,
-        estimatedPages: isStarterBot ? 5 : undefined,
-        prepaidUntil,
-        status: "content_collection",
-      })
-      .returning();
-
     if (!customer) {
-      return NextResponse.json({ error: "Failed to create customer" }, { status: 500 });
+      const [createdCustomer] = await db
+        .insert(customers)
+        .values({
+          orderId: order.id,
+          businessName: safeBusinessName,
+          domain: safeDomain,
+          subdomain: "chat",
+          websiteUrl: safeWebsiteUrl.startsWith("http") ? safeWebsiteUrl : `https://${safeWebsiteUrl}`,
+          estimatedPages: computed.estimatedPages ?? undefined,
+          prepaidUntil,
+          status: "content_collection",
+        })
+        .returning();
+      customer = createdCustomer;
+      if (!customer) {
+        return NextResponse.json({ error: "Failed to create customer" }, { status: 500 });
+      }
     }
 
     // 3) Create Stripe Checkout Session (prebuilt form)
@@ -195,10 +265,11 @@ export async function POST(request: Request) {
     const successUrl = `${baseUrl}/thank-you?orderId=${order.id}`;
     const cancelUrl = `${baseUrl}/checkout`;
 
-    const addOnLabels = safeAddOns.length > 0 ? ` + ${safeAddOns.join(", ")}` : "";
+    const addOnLabels = billableAddOns.length > 0 ? ` + ${billableAddOns.join(", ")}` : "";
     const lineItemName = `${planName} — ${safeBusinessName}${addOnLabels}`;
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create(
+      {
       payment_method_types: ["card"],
       customer_email: safeEmail,
       line_items: [
@@ -209,7 +280,7 @@ export async function POST(request: Request) {
               name: lineItemName,
               description: `AI chatbot for ${safeDomain}`,
             },
-            unit_amount: amountCents,
+            unit_amount: serverAmountCents,
           },
           quantity: 1,
         },
@@ -217,10 +288,22 @@ export async function POST(request: Request) {
       mode: "payment",
       success_url: successUrl,
       cancel_url: cancelUrl,
+      client_reference_id: order.id,
       metadata: {
         orderId: order.id,
+        planSlug: safePlanSlug,
+        pages: computed.estimatedPages != null ? String(computed.estimatedPages) : "",
+        addOns: billableAddOns.join(","),
       },
-    });
+      },
+      { idempotencyKey: `order_${order.id}` }
+    );
+
+    // Persist session id for reconciliation
+    await db
+      .update(orders)
+      .set({ stripeCheckoutSessionId: session.id, updatedAt: new Date() })
+      .where(eq(orders.id, order.id));
 
     return NextResponse.json({ url: session.url, orderId: order.id });
   } catch (e) {

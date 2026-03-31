@@ -3,6 +3,7 @@ import { openai } from "@ai-sdk/openai";
 import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { sanitizeChatMessage } from "@/lib/validation";
 
 /**
  * POST /api/chat/demo
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const lastUser = messages.filter((m) => m.role === "user").pop();
-    const query = lastUser?.content?.trim();
+    const query = typeof lastUser?.content === "string" ? sanitizeChatMessage(lastUser.content) : "";
     if (!query) {
       return NextResponse.json({ error: "No message to answer" }, { status: 400 });
     }
@@ -44,13 +45,18 @@ ${context}`;
       return NextResponse.json({ error: "LLM not configured" }, { status: 503 });
     }
 
+    const safeMessages = messages
+      .slice(-10)
+      .map((m) => ({
+        role: m.role as "user" | "assistant" | "system",
+        content: typeof m.content === "string" ? sanitizeChatMessage(m.content) : "",
+      }))
+      .filter((m) => m.content);
+
     const result = streamText({
       model: openai("gpt-4o-mini"),
       system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role as "user" | "assistant" | "system",
-        content: m.content,
-      })),
+      messages: safeMessages,
     });
 
     return result.toDataStreamResponse();

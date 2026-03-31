@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { estimateSiteAgeTech } from "@/lib/roast";
 import { getPageCountFromSitemap } from "@/lib/sitemap";
 import { sanitizeWebsiteUrl, isValidUrl } from "@/lib/validation";
+import { assertSafeOutboundHttpUrl } from "@/lib/url-safety";
 
 const FETCH_TIMEOUT_MS = 12_000;
 const DELAY_BETWEEN_HOMEPAGE_AND_SITEMAP_MS = 200; // Polite — avoid back-to-back hits on small sites
@@ -24,6 +25,11 @@ export async function POST(request: Request) {
     const url = sanitizeWebsiteUrl(rawUrl);
     const normalized = url.startsWith("http") ? url : `https://${url}`;
     if (!isValidUrl(normalized)) {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    }
+    try {
+      assertSafeOutboundHttpUrl(normalized);
+    } catch {
       return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
     }
 

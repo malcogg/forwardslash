@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { customerProducts, customerBlogPosts, customers } from "@/db/schema";
+import { customerProducts, customerBlogPosts, customers, orders } from "@/db/schema";
 import { eq, asc } from "drizzle-orm";
 import type { ChatCardBlock, ProductCardBlock, BlogCardBlock } from "@/components/chat/chat-types";
 
@@ -30,6 +30,13 @@ export async function POST(request: Request) {
 
     const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
     if (!customer) {
+      return NextResponse.json({ blocks: [] });
+    }
+
+    // Only return rich blocks for paid customers (prevents free scraping of curated data).
+    const [order] = await db.select().from(orders).where(eq(orders.id, customer.orderId));
+    const paid = order?.status === "paid" || order?.status === "delivered" || order?.status === "processing";
+    if (!paid) {
       return NextResponse.json({ blocks: [] });
     }
 

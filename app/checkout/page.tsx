@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
@@ -86,6 +86,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isSignedIn } = useUser();
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (isSignedIn) {
@@ -195,9 +196,14 @@ function CheckoutContent() {
     setSaveError(null);
     setIsPaying(true);
     try {
+      const orderId = searchParams.get("orderId");
+      const token = isSignedIn ? await getToken() : null;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
       const res = await fetch("/api/checkout/stripe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           firstName: sanitizeFirstName(firstName),
           email: email.trim().toLowerCase().slice(0, LIMITS.email),
@@ -208,7 +214,10 @@ function CheckoutContent() {
           planSlug: effectivePlanSlug,
           addOns: Array.from(addOns),
           amountCents: Math.round(subtotal * 100),
+          pages: isStarterBot ? 5 : (!isWebsitePlan ? pages : undefined),
+          orderId: orderId || undefined,
         }),
+        credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

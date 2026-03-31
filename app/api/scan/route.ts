@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { scans } from "@/db/schema";
+import { getOrCreateUser } from "@/lib/auth";
+import { sanitizeWebsiteUrl, isValidUrl } from "@/lib/validation";
+import { assertSafeOutboundHttpUrl } from "@/lib/url-safety";
 
 const CATEGORY_PATTERNS: { label: string; patterns: RegExp[] }[] = [
   { label: "Products", patterns: [/\/product/i, /\/shop/i, /\/store/i, /\/p\//, /\/item/i, /\/catalog/i] },
@@ -68,13 +71,29 @@ async function runFirecrawlCrawl(apiKey: string, url: string): Promise<{ success
 
 export async function POST(request: Request) {
   try {
+    // This endpoint triggers Firecrawl and is expensive.
+    // It is not used in the current landing-page flow; keep it authenticated to prevent abuse.
+    const user = await getOrCreateUser(request);
+    if (!user?.userId) {
+      return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+    }
+
     const body = (await request.json().catch(() => ({}))) as { url?: string; forceRescan?: boolean };
     const { url, forceRescan = false } = body;
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
-    const normalized = url.replace(/\/$/, "").replace(/^(?!https?:\/\/)/, "https://");
+    const sanitized = sanitizeWebsiteUrl(url);
+    const normalized = sanitized.replace(/\/$/, "").replace(/^(?!https?:\/\/)/, "https://");
+    if (!isValidUrl(normalized)) {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    }
+    try {
+      assertSafeOutboundHttpUrl(normalized);
+    } catch {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    }
     const apiKey = process.env.FIRECRAWL_API_KEY;
 
     if (!apiKey) {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
+import { orders, stripeEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 /**
@@ -31,22 +31,61 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
+  if (!db) return NextResponse.json({ received: true });
+
+  // Idempotency: Stripe retries webhooks. Record eventId and short-circuit duplicates.
+  try {
+    await db.insert(stripeEvents).values({
+      eventId: event.id,
+      type: event.type,
+      orderId: null,
+    });
+  } catch {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
+  const paidSessionEvents = new Set([
+    "checkout.session.completed",
+    "checkout.session.async_payment_succeeded",
+  ]);
+
+  if (paidSessionEvents.has(event.type)) {
     const session = event.data.object as Stripe.Checkout.Session;
     const orderId = session.metadata?.orderId;
-    if (!orderId || !db) {
+    const paymentStatus = session.payment_status;
+
+    if (!orderId) {
       return NextResponse.json({ received: true });
     }
+
+    // Only mark paid when Stripe says it's paid (prevents edge async cases).
+    if (paymentStatus && paymentStatus !== "paid") {
+      return NextResponse.json({ received: true });
+    }
+
+    const paymentIntentId =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id ?? null;
 
     await db
       .update(orders)
       .set({
         status: "paid",
         paymentProvider: "stripe",
-        paymentId: (typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id) ?? session.id,
+        paymentId: paymentIntentId ?? session.id,
+        stripeCheckoutSessionId: session.id,
+        stripePaymentIntentId: paymentIntentId,
+        stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
+
+    // Update stripe event row with orderId for auditability (best-effort)
+    await db
+      .update(stripeEvents)
+      .set({ orderId })
+      .where(eq(stripeEvents.eventId, event.id));
   }
 
   return NextResponse.json({ received: true });

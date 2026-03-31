@@ -8,6 +8,7 @@ import { getCreditBalance, deductCredits } from "@/lib/credits";
 import { resend, FROM_EMAIL } from "@/lib/resend";
 import { CrawlCompleteEmail } from "@/components/emails/crawl-complete";
 import { DnsInstructionsEmail } from "@/components/emails/dns-instructions";
+import { assertSafeOutboundHttpUrl } from "@/lib/url-safety";
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
   .split(",")
@@ -153,6 +154,14 @@ export async function POST(
   const url = customer.websiteUrl.startsWith("http")
     ? customer.websiteUrl
     : `https://${customer.websiteUrl}`;
+  try {
+    assertSafeOutboundHttpUrl(url);
+  } catch {
+    return NextResponse.json(
+      { error: "Website URL is not allowed" },
+      { status: 400 }
+    );
+  }
 
   const result = await runFirecrawlCrawl(apiKey, url, crawlLimit);
   if (!result.success || !result.data) {

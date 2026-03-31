@@ -67,10 +67,22 @@ export const orders = pgTable("orders", {
   status: text("status").notNull().default("pending"), // pending | paid | processing | delivered | failed
   paymentProvider: text("payment_provider"), // paypal | stripe
   paymentId: text("payment_id"), // external payment id
+  stripeCheckoutSessionId: text("stripe_checkout_session_id"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeCustomerId: text("stripe_customer_id"),
   paidNotificationSentAt: timestamp("paid_notification_sent_at", { withTimezone: true }), // cron: "build your chatbot" email sent
   buildReminderSentAt: timestamp("build_reminder_sent_at", { withTimezone: true }), // optional: "build your bot" reminder (paid 2+ days, no content)
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Stripe webhook deduplication / audit trail
+export const stripeEvents = pgTable("stripe_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  eventId: text("event_id").notNull().unique(),
+  type: text("type").notNull(),
+  orderId: uuid("order_id").references(() => orders.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 // Customers - chatbot config per order

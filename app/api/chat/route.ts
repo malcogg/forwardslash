@@ -2,7 +2,7 @@ import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { content, customers } from "@/db/schema";
+import { content, customers, orders } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { sanitizeChatMessage } from "@/lib/validation";
 
@@ -39,11 +39,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    const rows = await db.select().from(content).where(eq(content.customerId, customerId));
+    // Public endpoint: only allow real usage for paid customers.
+    const [order] = await db.select().from(orders).where(eq(orders.id, customer.orderId));
+    const paid = order?.status === "paid" || order?.status === "delivered" || order?.status === "processing";
+    if (!paid) {
+      return NextResponse.json(
+        { error: "Payment required" },
+        { status: 402 }
+      );
+    }
 
-    const context = rows
-      .map((r) => `## ${r.title}\nURL: ${r.url}\n\n${r.content}`)
-      .join("\n\n---\n\n");
+    const rows = await db
+      .select()
+      .from(content)
+      .where(eq(content.customerId, customerId));
+
+    // Prompt stuffing guardrail: cap total context size (chars) to avoid runaway token costs.
+    const MAX_CONTEXT_CHARS = 60_000;
+    let used = 0;
+    const parts: string[] = [];
+    for (const r of rows) {
+      const chunk = `## ${r.title}\nURL: ${r.url}\n\n${r.content}`;
+      if (used + chunk.length > MAX_CONTEXT_CHARS) break;
+      parts.push(chunk);
+      used += chunk.length;
+    }
+    const context = parts.join("\n\n---\n\n");
 
     const systemPrompt = `You are a helpful AI assistant for ${customer.businessName}. Answer questions using ONLY the following content from their website. Do not make up information. If the content doesn't contain relevant information, say so politely. Include links when relevant. Format responses in markdown.
 
@@ -55,13 +76,17 @@ ${context || "(No content yet - the chatbot is still being built.)"}`;
       return NextResponse.json({ error: "LLM not configured" }, { status: 503 });
     }
 
-    const safeMessages = messages.map((m) => {
+    // Guardrails: cap history length and message sizes
+    const safeMessages = messages
+      .slice(-12)
+      .map((m) => {
       const content = typeof m.content === "string" ? sanitizeChatMessage(m.content) : "";
       return {
         role: m.role as "user" | "assistant" | "system",
         content,
       };
-    });
+    })
+      .filter((m) => m.content);
 
     const result = streamText({
       model: openai("gpt-4o-mini"),

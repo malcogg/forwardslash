@@ -3,6 +3,8 @@
  * Fetches sitemap.xml (or index), parses URLs, counts same-domain pages.
  */
 
+import { assertSafeOutboundHttpUrl } from "@/lib/url-safety";
+
 const SITEMAP_PATHS = [
   "/sitemap.xml",
   "/sitemap_index.xml",
@@ -67,6 +69,7 @@ export async function getPageCountFromSitemap(baseUrl: string): Promise<number |
   let baseOrigin = "";
   try {
     const u = new URL(baseUrl);
+    assertSafeOutboundHttpUrl(u.origin);
     baseOrigin = u.origin;
   } catch {
     return null;
