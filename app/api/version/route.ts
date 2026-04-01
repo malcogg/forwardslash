@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+const BUILD_BUMP = "2026-04-01a";
+
 /**
  * GET /api/version
  * Returns non-sensitive build metadata to verify which commit is deployed.
@@ -9,6 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   return NextResponse.json({
     ok: true,
+    buildBump: BUILD_BUMP,
     vercel: {
       env: process.env.VERCEL_ENV ?? null, // production | preview | development
       url: process.env.VERCEL_URL ?? null,
